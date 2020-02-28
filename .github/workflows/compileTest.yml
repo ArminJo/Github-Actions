@@ -40,9 +40,8 @@ jobs:
             fqbn: "arduino:avr:uno"
             examples: all
 
-    # This is the platform GitHub will use to run our workflow, we
-    # pick Windows for no particular reason.
-    # runs-on: windows-latest
+    # This is the platform GitHub will use to run our workflow, I
+    # pick Ubuntu to reuse old shell scripts.
     runs-on: ubuntu-latest
 
     # This is the list of steps this job will run.
@@ -66,6 +65,12 @@ jobs:
           MATRIX_CONTEXT: ${{ toJson(matrix) }}
         run: echo "$MATRIX_CONTEXT"
         
+      - name: Link Repo as Arduino library
+        run: |
+          mkdir -p $HOME/Arduino/libraries
+          ln -s $PWD $HOME/Arduino/libraries/.
+          
+        
       # We then install the platform, which one will be determined
       # dynamically by the build matrix.
       - name: Install platform
@@ -73,7 +78,14 @@ jobs:
           arduino-cli core update-index
           arduino-cli core install ${{ matrix.arduino-platform }}
           
+      - name: Show environment
+        run: |
+          echo -e HOME=\"$HOME\"
+          echo PWD=$PWD
+          ls -Rla
+          arduino-cli board listall
+          
       # Finally, we compile the sketch, using the FQBN that was set
       # in the build matrix.
       - name: Compile Sketch
-        run: arduino-cli compile --fqbn ${{ matrix.fqbn }} ./SimpleFrequencyDetector
+        run: arduino-cli compile --fqbn ${{ matrix.fqbn }} ./examples/SimpleFrequencyDetector
