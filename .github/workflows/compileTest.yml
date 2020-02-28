@@ -1,17 +1,12 @@
 # This is the name of the workflow, visible on GitHub UI.
 name: compileTest
-
-# Here we tell GitHub to run the workflow when a commit
-# is pushed or a Pull Request is opened.
 on: [push]
-
-env:
-  INSTALL_PLATFORMS: avr,ATTinyCore,digistump
 
 # This is the list of jobs that will be run concurrently.
 # Since we use a build matrix, the actual number of jobs
 # started depends on how many configurations the matrix
 # will produce.
+
 jobs:
   # This is the name of the job - can be whatever.
   compileTest-matrix:
@@ -20,25 +15,33 @@ jobs:
     # Here we tell GitHub that the jobs must be determined
     # dynamically depending on a matrix configuration.
     strategy:
+
       matrix:
         # The matrix will produce one job for each configuration
-        # parameter of type `arduino-platform`, in this case a
-        # total of 2.
-        #arduino-platform: ["arduino:samd", "arduino:avr"]
-        arduino-platform: ["arduino:avr"]
-        # This is usually optional but we need to statically define the
-        # FQBN of the boards we want to test for each platform. In the
-        # future the CLI might automatically detect and download the core
-        # needed to compile against a certain FQBN, at that point the
-        # following `include` section will be useless.
+        # parameter of type `arduino-platform`
+        ####################################################################
+        arduino-platform: ["arduino:avr", "digistump:avr", "ATTinyCore:avr"]
+        ####################################################################
+
+
+        # Define the FQBN of the boards we want to test for each platform.
+        # This works like this: when the platformn is "digistump:avr", the
+        # variable `fqbn` is set to "digistump:avr:digispark-tiny".
+        ##################################################################
         include:
-          # This works like this: when the platformn is "arduino:samd", the
-          # variable `fqbn` is set to "arduino:samd:nano_33_iot".
-          #- arduino-platform: "arduino:samd"
-          #  fqbn: "arduino:samd:nano_33_iot"
+          - arduino-platform: "digistump:avr"
+            fqbn: "digistump:avr:digispark-tiny1" # ATtiny85 board @1 MHz 
+            
+          - arduino-platform: "ATTinyCore:avr"
+            fqbn: "ATTinyCore:avr:attinyx5:chip=85,clock=1internal"
+            
           - arduino-platform: "arduino:avr"
             fqbn: "arduino:avr:uno"
             examples: all
+        ###################################################################
+        
+      # Do not cancel all jobs / architectures if one job fails
+      fail-fast: false
 
     # This is the platform GitHub will use to run our workflow, I
     # pick Ubuntu to reuse old shell scripts.
@@ -46,6 +49,7 @@ jobs:
 
     # This is the list of steps this job will run.
     steps:
+    
       # First of all, we clone the repo using the `checkout` action.
       - name: Checkout
         uses: actions/checkout@master
@@ -55,6 +59,13 @@ jobs:
       - name: Setup Arduino CLI
         uses: arduino/setup-arduino-cli@v1.0.0
         
+      - name: Cache Arduino packages
+        id: cache-packages
+        uses: actions/cache@v1
+        with:
+          path: ~/.arduino15/packages/
+          key: arduino15-packages
+            
       # Error check
       - name: Check for error
         if: failure()
@@ -65,7 +76,7 @@ jobs:
           MATRIX_CONTEXT: ${{ toJson(matrix) }}
         run: echo "$MATRIX_CONTEXT"
         
-      - name: Link Repo as Arduino library
+      - name: Link this repository as Arduino library
         run: |
           mkdir -p $HOME/Arduino/libraries
           ln -s $PWD $HOME/Arduino/libraries/.
@@ -80,12 +91,12 @@ jobs:
           
       - name: Show environment
         run: |
-          echo -e HOME=\"$HOME\"
-          echo PWD=$PWD
-          ls -Rla
+          # echo -e HOME=\"$HOME\" # /home/runner
+          # echo PWD=$PWD # /home/runner/work/Github-Actions-Test/Github-Actions-Test
+          # ls -Rl $HOME/Arduino
           arduino-cli board listall
           
-      # Finally, we compile the sketch, using the FQBN that was set
-      # in the build matrix.
+      # Finally, we compile the sketch, using the FQBN that was set in the build matrix.
+      # --verbose --warnings all
       - name: Compile Sketch
-        run: arduino-cli compile --fqbn ${{ matrix.fqbn }} ./examples/SimpleFrequencyDetector
+        run: arduino-cli compile --verbose --fqbn ${{ matrix.fqbn }} ./examples/SimpleFrequencyDetector
