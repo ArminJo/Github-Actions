@@ -58,33 +58,45 @@ jobs:
       # configure the Arduino CLI on the system.
       - name: Setup Arduino CLI
         uses: arduino/setup-arduino-cli@v1.0.0
+      
+      - name: SetEnv
+        env:
+          MATRIX_PLATFORM: ${{ matrix.arduino-platform }}
+        run: |
+          echo ${{ toJson(matrix) }}
+          echo $MATRIX_PLATFORM
         
       - name: Cache Arduino packages
-        id: cache-packages
-        uses: actions/cache@v1
+        id: arduino15-packages-env.MATRIX_PLATFORM
+        uses: actions/cache@v1 # using version 1
         with:
           path: ~/.arduino15/packages/
-          key: arduino15-packages
+          key: arduino15-packages-env.MATRIX_PLATFORM
+          
+      - name: List Arduino packages before install
+        run: ls -l ~/.arduino15/packages/
             
       # Error check
-      - name: Check for error
-        if: failure()
-        run: echo Failure on Setup Arduino CLI
+      #- name: Check for error
+      #  if: failure()
+      #  run: echo Failure on Setup Arduino CLI
 
+      # Here we have only the matrix values for this job i.e. only one platform and fqbn
       - name: Dump matrix context
-        env:
-          MATRIX_CONTEXT: ${{ toJson(matrix) }}
-        run: echo "$MATRIX_CONTEXT"
+        #env:
+        #  MATRIX_CONTEXT: ${{ toJson(matrix) }}
+        run: echo ${{ toJson(matrix) }}
         
       - name: Link this repository as Arduino library
         run: |
           mkdir -p $HOME/Arduino/libraries
           ln -s $PWD $HOME/Arduino/libraries/.
-          
+        
         
       # We then install the platform, which one will be determined
       # dynamically by the build matrix.
       - name: Install platform
+        if: steps.arduino15-packages-env.MATRIX_PLATFORM.outputs.cache-hit != 'true'
         run: |
           arduino-cli core update-index
           arduino-cli core install ${{ matrix.arduino-platform }}
@@ -94,8 +106,12 @@ jobs:
           # echo -e HOME=\"$HOME\" # /home/runner
           # echo PWD=$PWD # /home/runner/work/Github-Actions-Test/Github-Actions-Test
           # ls -Rl $HOME/Arduino
+          which arduino-cli
           arduino-cli board listall
           
+      - name: test script
+        run: examples=($(find $PWD -name "*.ino")); for example in "${examples[@]}"; do; echo $(dirname $example);done
+                
       # Finally, we compile the sketch, using the FQBN that was set in the build matrix.
       # --verbose --warnings all
       - name: Compile Sketch
