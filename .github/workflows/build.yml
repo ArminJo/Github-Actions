@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest # I picked Ubuntu to use shell scripts.
     
     env: 
-      USED_LIBRARIES: "ESP32Servo Servo"
+      REQUIRED_LIBRARIES: ""
       
       # Output colors
       RED: '\033[0;31m'
@@ -30,29 +30,29 @@ jobs:
         # ATTinyCore:avr:attinyx5:chip=85,clock=1internal, digistump:avr:digispark-tiny, digistump:avr:digispark-pro
         # STM32:stm32:GenF1:pnum=BLUEPILL_F103C8
         #esp8266:esp8266:huzzah:eesz=4M3M,xtal=80, esp32:esp32:featheresp32:FlashFreq=80
-        ####################################################################
+        #############################################################################################################
         arduino-boards-fqbn:
           - digistump:avr:digispark-tiny1
           - ATTinyCore:avr:attinyx5:chip=85,clock=1internal
           - arduino:avr:uno
 
-        # Choose the right platform for the boards we want to test.
-        # This works like this: when the platformn is "digistump:avr:digispark-tiny", or "digistump:avr:digispark-tiny1" the
-        # variable `platform` is set to "digistump:avr". Just take the first 2 token of the fqbn - this cannot be automatically done by GitHub workflow :-(
-        ##################################################################
+        # Choose the right platform for the boards we want to test. (maybe in the future Arduino will automatically do this for you)
+        # This works like this: when the fqbn is "arduino:avr:uno" the variable `platform` is set to "arduino:avr". 
+        # Just take the first 2 token of the fqbn - this cannot be automatically done by GitHub workflow :-(
+        #############################################################################################################
         include:
           - arduino-boards-fqbn: digistump:avr:digispark-tiny1  # ATtiny85 board @1 MHz
             platform: digistump:avr
             examples-include: "SimpleFrequencyDetector" # Space separated list of examples to build, build all if omitted or empty
             
-          - arduino-boards-fqbn: "ATTinyCore:avr:attinyx5:chip=85,clock=1internal"
-            platform: "ATTinyCore:avr"
+          - arduino-boards-fqbn: ATTinyCore:avr:attinyx5:chip=85,clock=1internal
+            platform: ATTinyCore:avr
             examples-exclude: "SimpleFrequencyDetector" # Space separated list of examples to exclude in build
 
-          - arduino-boards-fqbn: "arduino:avr:uno"
-            platform: "arduino:avr"
+          - arduino-boards-fqbn: arduino:avr:uno
+            platform: arduino:avr
+
             
-        
       # Do not cancel all jobs / architectures if one job fails
       fail-fast: false
 
@@ -80,7 +80,11 @@ jobs:
       - name: Install platform from build matrix
         run: |
           arduino-cli core update-index
+          if [ ""${{  matrix.platform }}"" == "" ]; then echo -e ""$RED"ERROR: platform missing for board ${{ matrix.arduino-boards-fqbn }}. Check your matrix.includes entries"; exit 1; fi
+          if [[ ${{  matrix.platform }} != *"arduino"* && ! -f ./arduino-cli.yaml ]]; then echo -e ""$RED"Non Arduino platform ${{  matrix.platform }} requested, but file arduino-cli.yaml is missing."; exit 1; fi
           arduino-cli core install ${{ matrix.platform }} # for each job / board one platform is installed
+          arduino-cli board listall
+          if [ ${{  matrix.platform }} == "esp32:esp32" ]; then pip install pyserial; fi
           
       - name: List installed boards with their FQBN
         run: |
@@ -91,7 +95,7 @@ jobs:
           # which arduino-cli # /opt/hostedtoolcache/arduino-cli/0.9.0/x64/arduino-cli
 
       - name: Install libraries
-        run: arduino-cli lib install $USED_LIBRARIES
+        run: if [[ "$REQUIRED_LIBRARIES" != "" ]]; then arduino-cli lib install $REQUIRED_LIBRARIES ; fi
              
       # Finally, we compile the sketch, using the FQBN that was set in the build matrix.
       - name: Compile all examples
@@ -100,15 +104,16 @@ jobs:
             echo -e "Compiling ALL examples for board ${{ matrix.arduino-boards-fqbn }} \n"
             examples=($(find . -name "*.ino"))
             for example in "${examples[@]}"; do # Loop over all example directories
-              if [[ "${{ matrix.examples-exclude }}" == *"$(basename $(dirname $example))"* ]]; then
-                echo -e "Skipping $(basename $(dirname $example)) \xe2\x9e\x9e" # Right arrow
+              example_name=$(basename $(dirname $example))
+              if [[ "${{ matrix.examples-exclude }}" == *"$example_name"* ]]; then
+                echo -e "Skipping $example_name \xe2\x9e\x9e" # Right arrow
               else
-                echo -n "Compiling $(basename $(dirname $example)) "
+                echo -n "Compiling $example_name "
                 build_stdout=$(arduino-cli compile --verbose --warnings all --fqbn ${{ matrix.arduino-boards-fqbn }} $(dirname $example) 2>&1);
                 if [ $? -ne 0 ]; then 
                   echo -e ""$RED"\xe2\x9c\x96" # If ok output a green checkmark else a red X and the command output.
                   exit_code=1
-                  echo "$build_stdout"
+                  echo -e "$build_stdout \n"
                 else 
                   echo -e ""$GREEN"\xe2\x9c\x93"
                 fi 
@@ -123,7 +128,7 @@ jobs:
               if [ $? -ne 0 ]; then 
                 echo -e ""$RED"\xe2\x9c\x96" # If ok output a green checkmark else a red X and the command output.
                 exit_code=1
-                echo "$build_stdout"
+                  echo -e "$build_stdout \n"
               else 
                 echo -e ""$GREEN"\xe2\x9c\x93"
               fi
