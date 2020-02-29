@@ -4,6 +4,8 @@
 [![Build Status](https://travis-ci.org/ArminJo/Arduino-FrequencyDetector.svg?branch=master)](https://travis-ci.org/ArminJo/Arduino-FrequencyDetector)
 [![Hit Counter](https://hitcounter.pythonanywhere.com/count/tag.svg?url=https%3A%2F%2Fgithub.com%2FArminJo%2FArduino-FrequencyDetector)](https://github.com/brentvollebregt/hit-counter)
 
+[![Actions Status](https://github.com/ArminJo/Github-Actions-Test/workflows/compileTest/badge.svg)](https://github.com/ArminJo/Github-Actions-Test/actions)
+
 YouTube video of whistle switch example in action.
 
 [![Demonstration of 3 whistle switches in one room](https://i.ytimg.com/vi/_e2mElB8zJs/hqdefault.jpg)](https://www.youtube.com/watch?v=_e2mElB8zJs)
