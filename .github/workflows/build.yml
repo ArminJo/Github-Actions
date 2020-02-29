@@ -1,16 +1,15 @@
+# Before being able to push to my .github\workflows directories, 
+# I had to create a new personal token with workflow enabled at https://github.com/settings/tokens
+
 # This is the name of the workflow, visible on GitHub UI.
-name: compileTest
+name: build
 on: [push]
 
-# This is the list of jobs that will be run concurrently.
-# Since we use a build matrix, the actual number of jobs
-# started depends on how many configurations the matrix
-# will produce.
-
 jobs:
-  # This is the name of the job - can be whatever.
-  compileTest-matrix:
-    name: Test compiling one example
+  build:
+    name: Test compiling examples for ${{ matrix.arduino-boards-fqbn }}
+    
+    runs-on: ubuntu-latest # I picked Ubuntu to use shell scripts.
     
     env: # Output colors
       RED: '\033[0;31m'
@@ -18,15 +17,18 @@ jobs:
       YELLOW: '\033[1;33m'
       BLUE: '\033[0;34m'
       
-    # Here we tell GitHub that the jobs must be determined
-    # dynamically depending on a matrix configuration.
     strategy:
-
       matrix:
-        # The matrix will produce one job for each configuration
-        # parameter of type `arduino-boards-fqbn`
+        # The matrix will produce one job for each configuration parameter of type `arduino-boards-fqbn`
+        # All possible board fqbn for a platform will be listed in step: List installed boards with their FQBN
+        # In the Arduino IDE, the fqbn is printed in the first line of the verbose output for compilation as parameter -fqbn=... for the "arduino-builder -dump-prefs" command
+        # Examples: arduino:avr:uno, arduino:avr:leonardo, arduino:avr:nano, arduino:avr:mega
+        # arduino:sam:arduino_due_x, arduino:samd:arduino_zero_native"
+        # ATTinyCore:avr:attinyx5:chip=85,clock=1internal, digistump:avr:digispark-tiny, digistump:avr:digispark-pro
+        # STM32:stm32:GenF1:pnum=BLUEPILL_F103C8
+        #esp8266:esp8266:huzzah:eesz=4M3M,xtal=80, esp32:esp32:featheresp32:FlashFreq=80
         ####################################################################
-        arduino-boards-fqbn: ["digistump:avr:digispark-tiny1", "digistump:avr:digispark-tiny", "ATTinyCore:avr:attinyx5:chip=85,clock=1internal", "arduino:avr:uno"]
+        arduino-boards-fqbn: ["digistump:avr:digispark-tiny1", "ATTinyCore:avr:attinyx5:chip=85,clock=1internal", "arduino:avr:uno"]
 
         # Choose the right platform for the boards we want to test.
         # This works like this: when the platformn is "digistump:avr:digispark-tiny", or "digistump:avr:digispark-tiny1" the
@@ -35,11 +37,7 @@ jobs:
         include:
           - arduino-boards-fqbn: "digistump:avr:digispark-tiny1"  # ATtiny85 board @1 MHz
             platform: "digistump:avr"
-            examples: "SimpleFrequencyDetector" # Space separated list of examples to build, build all if omitted or empty
-            
-          - arduino-boards-fqbn: "digistump:avr:digispark-tiny"  # ATtiny85 board @1 MHz
-            platform: "digistump:avr"
-            examples: "SimpleFrequencyDetector" # Space separated list of examples to build, build all if omitted or empty
+            # examples: "SimpleFrequencyDetector" # Space separated list of examples to build, build all if omitted or empty
             
           - arduino-boards-fqbn: "ATTinyCore:avr:attinyx5:chip=85,clock=1internal"
             platform: "ATTinyCore:avr"
@@ -47,13 +45,9 @@ jobs:
           - arduino-boards-fqbn: "arduino:avr:uno"
             platform: "arduino:avr"
             
-        ###################################################################
         
       # Do not cancel all jobs / architectures if one job fails
       fail-fast: false
-
-    # I picked Ubuntu to use shell scripts.
-    runs-on: ubuntu-latest
 
     # This is the list of steps this job will run.
     steps:
@@ -109,7 +103,7 @@ jobs:
           then echo -e """$RED""\xe2\x9c\x96"; exit_code=1; echo "$build_stdout"; else echo -e ""$GREEN"\xe2\x9c\x93"; fi # If ok output a green check else a red X and the command output.
           done
           fi
-          return $exit_code
+          exit $exit_code
         shell: bash {0} # Needed to avoid an exit at first error
         
       ##########################################################
