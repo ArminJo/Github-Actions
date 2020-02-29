@@ -7,7 +7,7 @@ on: [push]
 
 jobs:
   build:
-    name: Test compiling examples for ${{ matrix.arduino-boards-fqbn }}
+    name: ${{ matrix.arduino-boards-fqbn }} - test compiling examples
     
     runs-on: ubuntu-latest # I picked Ubuntu to use shell scripts.
     
@@ -20,24 +20,28 @@ jobs:
     strategy:
       matrix:
         # The matrix will produce one job for each configuration parameter of type `arduino-boards-fqbn`
-        # All possible board fqbn for a platform will be listed in step: List installed boards with their FQBN
         # In the Arduino IDE, the fqbn is printed in the first line of the verbose output for compilation as parameter -fqbn=... for the "arduino-builder -dump-prefs" command
+        #
         # Examples: arduino:avr:uno, arduino:avr:leonardo, arduino:avr:nano, arduino:avr:mega
         # arduino:sam:arduino_due_x, arduino:samd:arduino_zero_native"
         # ATTinyCore:avr:attinyx5:chip=85,clock=1internal, digistump:avr:digispark-tiny, digistump:avr:digispark-pro
         # STM32:stm32:GenF1:pnum=BLUEPILL_F103C8
         #esp8266:esp8266:huzzah:eesz=4M3M,xtal=80, esp32:esp32:featheresp32:FlashFreq=80
         ####################################################################
-        arduino-boards-fqbn: ["digistump:avr:digispark-tiny1", "ATTinyCore:avr:attinyx5:chip=85,clock=1internal", "arduino:avr:uno"]
+        arduino-boards-fqbn:
+          - digistump:avr:digispark-tiny1
+          - ATTinyCore:avr:attinyx5:chip=85,clock=1internal
+          - arduino:avr:uno
 
         # Choose the right platform for the boards we want to test.
         # This works like this: when the platformn is "digistump:avr:digispark-tiny", or "digistump:avr:digispark-tiny1" the
         # variable `platform` is set to "digistump:avr". Just take the first 2 token of the fqbn - this cannot be automatically done by GitHub workflow :-(
         ##################################################################
         include:
-          - arduino-boards-fqbn: "digistump:avr:digispark-tiny1"  # ATtiny85 board @1 MHz
-            platform: "digistump:avr"
-            # examples: "SimpleFrequencyDetector" # Space separated list of examples to build, build all if omitted or empty
+          - arduino-boards-fqbn: digistump:avr:digispark-tiny1  # ATtiny85 board @1 MHz
+            platform: digistump:avr
+            examples:
+              include: "SimpleFrequencyDetector" # Space separated list of examples to build, build all if omitted or empty
             
           - arduino-boards-fqbn: "ATTinyCore:avr:attinyx5:chip=85,clock=1internal"
             platform: "ATTinyCore:avr"
@@ -87,7 +91,7 @@ jobs:
       # Finally, we compile the sketch, using the FQBN that was set in the build matrix.
       - name: Compile all examples
         run: |
-          if [ "${{ matrix.examples }}" == "" ]; then
+          if [ "${{ matrix.examples.include }}" == "" ]; then
           echo -e "Compiling ALL examples for board ${{ matrix.arduino-boards-fqbn }} \n"
           examples=($(find . -name "*.ino"))
           for example in "${examples[@]}"; do # Loop over all example directories
@@ -97,7 +101,7 @@ jobs:
           done
           else
           echo -e "Compiling SELECTED examples for board ${{ matrix.arduino-boards-fqbn }} \n"
-          for example in "${{ matrix.examples }}"; do
+          for example in "${{ matrix.examples.include }}"; do
           echo -n "Compiling $example "
           build_stdout=$(arduino-cli compile --verbose --warnings all --fqbn ${{ matrix.arduino-boards-fqbn }} ./examples/$example 2>&1); if [ $? -ne 0 ]; 
           then echo -e """$RED""\xe2\x9c\x96"; exit_code=1; echo "$build_stdout"; else echo -e ""$GREEN"\xe2\x9c\x93"; fi # If ok output a green check else a red X and the command output.
