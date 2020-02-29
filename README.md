@@ -31,15 +31,16 @@ Wenn man kein Geld bezahlt muss man wohl damit leben, dass einem der Account ers
 Daher habe ich 2 Tage investiert, das CI auf **GitHub Actions** umzustellen und festgestellt, das es dort ca. **5 mal schneller** durchläuft und natürlich auch besser integriert ist.
 
 # List of my other GitHub workflows
+- ATtinySerialOut [![Build Status](https://github.com/ArminJo/ATtinySerialOut/workflows/build/badge.svg)](https://github.com/ArminJo/ATtinySerialOut/actions)
+- Arduino-BlueDisplay [![Build Status](https://github.com/ArminJo/Arduino-BlueDisplay/workflows/build/badge.svg)](https://github.com/ArminJo/Arduino-BlueDisplay/actions)
 - Arduino-FrequencyDetector [![Build Status](https://github.com/ArminJo/Arduino-FrequencyDetector/workflows/build/badge.svg)](https://github.com/ArminJo/Arduino-FrequencyDetector/actions)
+- Arduino-OpenWindowAlarm [![Build Status](https://github.com/ArminJo/Arduino-OpenWindowAlarm/workflows/build/badge.svg)](https://github.com/ArminJo/Arduino-OpenWindowAlarm/actions)
+- Arduino-Utils [![Build Status](https://github.com/ArminJo/Arduino-Utils/workflows/build/badge.svg)](https://github.com/ArminJo/Arduino-Utils/actions)
+- EasyButtonAtInt01 [![Build Status](https://github.com/ArminJo/EasyButtonAtInt01/workflows/build/badge.svg)](https://github.com/ArminJo/EasyButtonAtInt01/actions)
+- NeoPatterns [![Build Status](https://github.com/ArminJo/NeoPatterns/workflows/build/badge.svg)](https://github.com/ArminJo/NeoPatterns/actions)
+- PlayRtttl [![Build Status](https://github.com/ArminJo/PlayRtttl/workflows/build/badge.svg)](https://github.com/ArminJo/PlayRtttl/actions)
+- QuadrupedControl [![Build Status](https://github.com/ArminJo/QuadrupedControl/workflows/build/badge.svg)](https://github.com/ArminJo/QuadrupedControl/actions)
 - ServoEasing [![Build Status](https://github.com/ArminJo/ServoEasing/workflows/build/badge.svg)](https://github.com/ArminJo/ServoEasing/actions)
 - Talkie [![Build Status](https://github.com/ArminJo/Talkie/workflows/build/badge.svg)](https://github.com/ArminJo/Talkie/actions)
-- QuadrupedControl [![Build Status](https://github.com/ArminJo/QuadrupedControl/workflows/build/badge.svg)](https://github.com/ArminJo/QuadrupedControl/actions)
-- NeoPatterns [![Build Status](https://github.com/ArminJo/NeoPatterns/workflows/build/badge.svg)](https://github.com/ArminJo/NeoPatterns/actions)
-- EasyButtonAtInt01 [![Build Status](https://github.com/ArminJo/EasyButtonAtInt01/workflows/build/badge.svg)](https://github.com/ArminJo/EasyButtonAtInt01/actions)
-- Arduino-BlueDisplay [![Build Status](https://github.com/ArminJo/Arduino-BlueDisplay/workflows/build/badge.svg)](https://github.com/ArminJo/Arduino-BlueDisplay/actions)
-
 
 - irmp [![Build Status](https://github.com/ukw100/irmp/workflows/build/badge.svg)](https://github.com/ukw100/irmp/actions)
-
-

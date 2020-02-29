@@ -12,7 +12,14 @@ jobs:
     runs-on: ubuntu-latest # I picked Ubuntu to use shell scripts.
     
     env: 
-      REQUIRED_LIBRARIES: ""
+    # On the commandline directly it works with PlayRtttl "Adafruit NeoPixel" but not with 'PlayRtttl "Adafruit NeoPixel"' because it is seen as one long library name
+    # 1. Test with "$REQUIRED_LIBRARIES"  all variants are seen as one token/library
+    # 2. Test without " around $REQUIRED_LIBRARIES 
+    # '"PlayRtttl" "Adafruit NeoPixel"' fail, "PlayRtttl" and "Adafruit are both library names containing quotes
+    # "NeoPatterns PlayRtttl" works :-)
+    # NeoPatterns PlayRtttl "Adafruit NeoPixel" does not work "Adafruit and NeoPixel" are taken as library names
+    # "Adafruit NeoPixel" and 'Adafruit NeoPixel' is interpreted as "Adafruit + NeoPixel" or 'Adafruit + NeoPixel'
+      REQUIRED_LIBRARIES: " "
       
       # Output colors
       RED: '\033[0;31m'
@@ -32,9 +39,9 @@ jobs:
         #esp8266:esp8266:huzzah:eesz=4M3M,xtal=80, esp32:esp32:featheresp32:FlashFreq=80
         #############################################################################################################
         arduino-boards-fqbn:
-          - digistump:avr:digispark-tiny1
-          - ATTinyCore:avr:attinyx5:chip=85,clock=1internal
           - arduino:avr:uno
+          #- digistump:avr:digispark-tiny1
+          #- ATTinyCore:avr:attinyx5:chip=85,clock=1internal
 
         # Choose the right platform for the boards we want to test. (maybe in the future Arduino will automatically do this for you)
         # This works like this: when the fqbn is "arduino:avr:uno" the variable `platform` is set to "arduino:avr". 
@@ -67,7 +74,7 @@ jobs:
       # configure the Arduino CLI on the system.
       - name: Setup Arduino CLI
         uses: arduino/setup-arduino-cli@v1.0.0
-        
+               
       # Here we have only the matrix values for this job i.e. only one platform and fqbn
       #- name: Dump matrix context
       #  run: echo " ${{ toJson(matrix) }} "
@@ -93,10 +100,11 @@ jobs:
           # echo -e HOME=\"$HOME\" # /home/runner
           # echo PWD=$PWD # /home/runner/work/Github-Actions-Test/Github-Actions-Test
           # which arduino-cli # /opt/hostedtoolcache/arduino-cli/0.9.0/x64/arduino-cli
-
+          
       - name: Install libraries
-        run: if [[ "$REQUIRED_LIBRARIES" != "" ]]; then arduino-cli lib install $REQUIRED_LIBRARIES ; fi
-             
+        run: for word in $REQUIRED_LIBRARIES; do echo $word; done; if [[ "$REQUIRED_LIBRARIES" != "" ]]; then arduino-cli lib install $REQUIRED_LIBRARIES "Adafruit NeoPixel"; fi
+
+
       # Finally, we compile the sketch, using the FQBN that was set in the build matrix.
       - name: Compile all examples
         run: |
