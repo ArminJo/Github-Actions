@@ -37,6 +37,7 @@ Daher habe ich 2 Tage investiert, das CI auf **GitHub Actions** umzustellen und 
 - Arduino-OpenWindowAlarm [![Build Status](https://github.com/ArminJo/Arduino-OpenWindowAlarm/workflows/build/badge.svg)](https://github.com/ArminJo/Arduino-OpenWindowAlarm/actions)
 - Arduino-Utils [![Build Status](https://github.com/ArminJo/Arduino-Utils/workflows/build/badge.svg)](https://github.com/ArminJo/Arduino-Utils/actions)
 - EasyButtonAtInt01 [![Build Status](https://github.com/ArminJo/EasyButtonAtInt01/workflows/build/badge.svg)](https://github.com/ArminJo/EasyButtonAtInt01/actions)
+- LightweightServo [![Build Status](https://github.com/ArminJo/LightweightServo/workflows/build/badge.svg)](https://github.com/ArminJo/LightweightServo/actions)
 - NeoPatterns [![Build Status](https://github.com/ArminJo/NeoPatterns/workflows/build/badge.svg)](https://github.com/ArminJo/NeoPatterns/actions)
 - PlayRtttl [![Build Status](https://github.com/ArminJo/PlayRtttl/workflows/build/badge.svg)](https://github.com/ArminJo/PlayRtttl/actions)
 - QuadrupedControl [![Build Status](https://github.com/ArminJo/QuadrupedControl/workflows/build/badge.svg)](https://github.com/ArminJo/QuadrupedControl/actions)

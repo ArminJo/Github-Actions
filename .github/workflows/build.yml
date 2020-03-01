@@ -50,6 +50,7 @@ jobs:
         include:
           - arduino-boards-fqbn: digistump:avr:digispark-tiny1  # ATtiny85 board @1 MHz
             platform: digistump:avr
+            # examples-build-properties / aka setting compiler.cpp.extra_flags does not work for digistump:avr platform
             examples-exclude: "WhistleSwitch" # Space separated list of examples to exclude in build
             
           - arduino-boards-fqbn: ATTinyCore:avr:attinyx5:chip=85,clock=1internal
@@ -161,9 +162,9 @@ jobs:
               echo -e "Skipping $EXAMPLE_NAME \xe2\x9e\x9e" # Right arrow
             else
               # check if there is an entry in the associative array and create a compile parameter
-              if [[ "${PROP_MAP[$EXAMPLE_NAME]}" != "" ]]; then PROP_STRING="with ${PROP_MAP[$EXAMPLE_NAME]} "; else PROP_STRING=""; fi # to see it in the output
               echo "arduino-cli compile --verbose --warnings all --fqbn ${{ matrix.arduino-boards-fqbn }} --build-properties compiler.cpp.extra_flags=\"${PROP_MAP[$EXAMPLE_NAME]}\" $(dirname $example)"
-              echo -n "Compiling $EXAMPLE_NAME $PROP_STRING"
+              echo -n "Compiling $EXAMPLE_NAME "
+              if [[ "${PROP_MAP[$EXAMPLE_NAME]}" != "" ]]; then echo -n"with ${PROP_MAP[$EXAMPLE_NAME]} "; fi
               build_stdout=$(arduino-cli compile --verbose --warnings all --fqbn ${{ matrix.arduino-boards-fqbn }} --build-properties compiler.cpp.extra_flags="${PROP_MAP[$EXAMPLE_NAME]}" $(dirname $example) 2>&1);
               if [ $? -ne 0 ]; then 
                 echo -e ""$RED"\xe2\x9c\x96" # If ok output a green checkmark else a red X and the command output.
