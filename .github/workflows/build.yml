@@ -50,27 +50,24 @@ jobs:
         include:
           - arduino-boards-fqbn: digistump:avr:digispark-tiny1  # ATtiny85 board @1 MHz
             platform: digistump:avr
-            examples-exclude: "WhistleSwitch"
+            examples-exclude: "WhistleSwitch" # Space separated list of examples to exclude in build
             
           - arduino-boards-fqbn: ATTinyCore:avr:attinyx5:chip=85,clock=1internal
             platform: ATTinyCore:avr
-            examples-exclude: "SimpleFrequencyDetector" # Space separated list of examples to exclude in build
             examples-build-properties:
               SimpleFrequencyDetector:
                 -DDEBUG
                 -DINFO
               WhistleSwitch:
                 -DDEBUG
-                -DINFO=xyz
                 
           - arduino-boards-fqbn: arduino:avr:uno
             platform: arduino:avr
             SimpleFrequencyDetector: -DDEBUG
             WhistleSwitch: -DINFO
             examples-build-properties:
-              SimpleFrequencyDetector:
-                -DARDUINO=10812
-                -DINFO
+              WhistleSwitch:
+                -DDEBUG
             
       # Do not cancel all jobs / architectures if one job fails
       fail-fast: false
@@ -108,10 +105,10 @@ jobs:
           if [[ $BUILD_PROPERTIES != "null" ]]; then
           # (\w*): * first token before the colon and spaces, ([^,}]*) token after colon and spaces up to "," or "}", [,}] trailing characters
             echo $BUILD_PROPERTIES | sed -E 's/"(\w*)": *([^,}]*)[,}]/\[\1\]=\2/g'
-            declare -A EXAMPLE_BUILD_PROPERTIES_MAP="( $(echo $BUILD_PROPERTIES | sed -E 's/"(\w*)": *([^,}]*)[,}]/\[\1\]=\2/g' ) )"
-            declare -p EXAMPLE_BUILD_PROPERTIES_MAP
+            declare -A PROP_MAP="( $(echo $BUILD_PROPERTIES | sed -E 's/"(\w*)": *([^,}]*)[,}]/\[\1\]=\2/g' ) )"
+            declare -p PROP_MAP
             EXAMPLE=SimpleFrequencyDetector
-            echo Property of $EXAMPLE= ${EXAMPLE_BUILD_PROPERTIES_MAP[$EXAMPLE]}
+            echo Property of $EXAMPLE= ${PROP_MAP[$EXAMPLE]}
           fi
         shell: bash {0} # Needed to avoid an exit at first error
                        
@@ -155,7 +152,7 @@ jobs:
         run: |
           BUILD_PROPERTIES=${BUILD_PROPERTIES#\{} # remove "{"
           # if matrix.examples-build-properties are specified, create an associative shell array
-          if [[ $BUILD_PROPERTIES != "null" ]]; then declare -A EXAMPLE_BUILD_PROPERTIES_MAP="( $(echo $BUILD_PROPERTIES | sed -E 's/"(\w*)": *([^,}]*)[,}]/\[\1\]=\2/g' ) )"; fi
+          if [[ $BUILD_PROPERTIES != "null" ]]; then declare -A PROP_MAP="( $(echo $BUILD_PROPERTIES | sed -E 's/"(\w*)": *([^,}]*)[,}]/\[\1\]=\2/g' ) )"; fi
           echo -e "Compiling examples for board ${{ matrix.arduino-boards-fqbn }} \n"
           EXAMPLES=($(find . -name "*.ino"))
           for example in "${EXAMPLES[@]}"; do # Loop over all example directories
@@ -164,15 +161,10 @@ jobs:
               echo -e "Skipping $EXAMPLE_NAME \xe2\x9e\x9e" # Right arrow
             else
               # check if there is an entry in the associative array and create a compile parameter
-              if [[ "${EXAMPLE_BUILD_PROPERTIES_MAP[$EXAMPLE_NAME]}" != "" ]]; then
-                EXAMPLE_BUILD_PROPERTIES=${EXAMPLE_BUILD_PROPERTIES_MAP[$EXAMPLE_NAME]} # Set build flags on a per example basis
-                EXAMPLE_BUILD_PROPERTIES_STRING="with ${EXAMPLE_BUILD_PROPERTIES_MAP[$EXAMPLE_NAME]} " # to see it in the output
-              else
-                EXAMPLE_BUILD_PROPERTIES_STRING=""
-              fi
-              echo "arduino-cli compile --verbose --warnings all --fqbn ${{ matrix.arduino-boards-fqbn }} --build-properties build.extra_flags=\"${EXAMPLE_BUILD_PROPERTIES_MAP[$EXAMPLE_NAME]}\" $(dirname $example)"
-              echo -n "Compiling $EXAMPLE_NAME $EXAMPLE_BUILD_PROPERTIES_STRING"
-              build_stdout=$(arduino-cli compile --verbose --warnings all --fqbn ${{ matrix.arduino-boards-fqbn }} --build-properties build.extra_flags="${EXAMPLE_BUILD_PROPERTIES_MAP[$EXAMPLE_NAME]}" $(dirname $example) 2>&1);
+              if [[ "${PROP_MAP[$EXAMPLE_NAME]}" != "" ]]; then PROP_STRING="with ${PROP_MAP[$EXAMPLE_NAME]} "; else PROP_STRING=""; fi # to see it in the output
+              echo "arduino-cli compile --verbose --warnings all --fqbn ${{ matrix.arduino-boards-fqbn }} --build-properties compiler.cpp.extra_flags=\"${PROP_MAP[$EXAMPLE_NAME]}\" $(dirname $example)"
+              echo -n "Compiling $EXAMPLE_NAME $PROP_STRING"
+              build_stdout=$(arduino-cli compile --verbose --warnings all --fqbn ${{ matrix.arduino-boards-fqbn }} --build-properties compiler.cpp.extra_flags="${PROP_MAP[$EXAMPLE_NAME]}" $(dirname $example) 2>&1);
               if [ $? -ne 0 ]; then 
                 echo -e ""$RED"\xe2\x9c\x96" # If ok output a green checkmark else a red X and the command output.
                 exit_code=1
