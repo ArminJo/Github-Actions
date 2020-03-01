@@ -40,8 +40,8 @@ jobs:
         #############################################################################################################
         arduino-boards-fqbn:
           - arduino:avr:uno
-          #- digistump:avr:digispark-tiny1
-          #- ATTinyCore:avr:attinyx5:chip=85,clock=1internal
+          - digistump:avr:digispark-tiny1
+          - ATTinyCore:avr:attinyx5:chip=85,clock=1internal
 
         # Choose the right platform for the boards we want to test. (maybe in the future Arduino will automatically do this for you)
         # This works like this: when the fqbn is "arduino:avr:uno" the variable `platform` is set to "arduino:avr". 
@@ -50,15 +50,27 @@ jobs:
         include:
           - arduino-boards-fqbn: digistump:avr:digispark-tiny1  # ATtiny85 board @1 MHz
             platform: digistump:avr
-            examples-include: "SimpleFrequencyDetector" # Space separated list of examples to build, build all if omitted or empty
+            examples-exclude: "WhistleSwitch"
             
           - arduino-boards-fqbn: ATTinyCore:avr:attinyx5:chip=85,clock=1internal
             platform: ATTinyCore:avr
             examples-exclude: "SimpleFrequencyDetector" # Space separated list of examples to exclude in build
-
+            examples-build-properties:
+              SimpleFrequencyDetector:
+                -DDEBUG
+                -DINFO
+              WhistleSwitch:
+                -DDEBUG
+                -DINFO=xyz
+                
           - arduino-boards-fqbn: arduino:avr:uno
             platform: arduino:avr
-
+            SimpleFrequencyDetector: -DDEBUG
+            WhistleSwitch: -DINFO
+            examples-build-properties:
+              SimpleFrequencyDetector:
+                -DARDUINO=10812
+                -DINFO
             
       # Do not cancel all jobs / architectures if one job fails
       fail-fast: false
@@ -66,6 +78,14 @@ jobs:
     # This is the list of steps this job will run.
     steps:
     
+          #######################################
+          #MATRIX="${{ toJson(matrix) }}"
+          #echo MATRIX="$MATRIX" # Multi line output
+          #echo MATRIX=$MATRIX   # Singele line output
+          #echo matrix=$matrix   # empty
+          #echo matrix=${{ matrix }} #=Object The string "Object"
+          #########################################
+          
       # First of all, we clone the repo using the `checkout` action.
       - name: Checkout
         uses: actions/checkout@master
@@ -74,11 +94,35 @@ jobs:
       # configure the Arduino CLI on the system.
       - name: Setup Arduino CLI
         uses: arduino/setup-arduino-cli@v1.0.0
-               
+
+      - name: Dump selected matrix context
+        run: echo "matrix.examples-build-properties=${{ toJson(matrix.examples-build-properties) }}"
+
+      - name: Connvert matrix to assoc array
+        env:
+          BUILD_PROPERTIES: ${{ toJson(matrix.examples-build-properties) }}
+        run: |
+          echo BUILD_PROPERTIES=$BUILD_PROPERTIES
+          BUILD_PROPERTIES=${BUILD_PROPERTIES#\{} # remove "{"
+          echo BUILD_PROPERTIES=$BUILD_PROPERTIES
+          if [[ $BUILD_PROPERTIES != "null" ]]; then
+          # (\w*): * first token before the colon and spaces, ([^,}]*) token after colon and spaces up to "," or "}", [,}] trailing characters
+            echo $BUILD_PROPERTIES | sed -E 's/"(\w*)": *([^,}]*)[,}]/\[\1\]=\2/g'
+            declare -A EXAMPLE_BUILD_PROPERTIES_MAP="( $(echo $BUILD_PROPERTIES | sed -E 's/"(\w*)": *([^,}]*)[,}]/\[\1\]=\2/g' ) )"
+            declare -p EXAMPLE_BUILD_PROPERTIES_MAP
+            EXAMPLE=SimpleFrequencyDetector
+            echo Property of $EXAMPLE= ${EXAMPLE_BUILD_PROPERTIES_MAP[$EXAMPLE]}
+          fi
+        shell: bash {0} # Needed to avoid an exit at first error
+                       
       # Here we have only the matrix values for this job i.e. only one platform and fqbn
-      #- name: Dump matrix context
-      #  run: echo " ${{ toJson(matrix) }} "
-        
+      #{ arduino-boards-fqbn: arduino:avr:uno, platform: arduino:avr, SimpleFrequencyDetector: -DDEBUG }
+      #- name: Tests
+      #  run: |
+      #    echo Test start
+      #    echo Test end
+      #  shell: bash {0} # Needed to avoid an exit at first error
+         
       - name: Link this repository as Arduino library
         run: |
           mkdir -p $HOME/Arduino/libraries
@@ -87,7 +131,7 @@ jobs:
       - name: Install platform from build matrix
         run: |
           arduino-cli core update-index
-          if [ ""${{  matrix.platform }}"" == "" ]; then echo -e ""$RED"ERROR: platform missing for board ${{ matrix.arduino-boards-fqbn }}. Check your matrix.includes entries"; exit 1; fi
+          if [ "${{  matrix.platform }}" == "" ]; then echo -e ""$RED"ERROR: platform missing for board ${{ matrix.arduino-boards-fqbn }}. Check your matrix.includes entries"; exit 1; fi
           if [[ ${{  matrix.platform }} != *"arduino"* && ! -f ./arduino-cli.yaml ]]; then echo -e ""$RED"Non Arduino platform ${{  matrix.platform }} requested, but file arduino-cli.yaml is missing."; exit 1; fi
           arduino-cli core install ${{ matrix.platform }} # for each job / board one platform is installed
           arduino-cli board listall
@@ -104,49 +148,45 @@ jobs:
       - name: Install libraries
         run: for word in $REQUIRED_LIBRARIES; do echo $word; done; if [[ "$REQUIRED_LIBRARIES" != "" ]]; then arduino-cli lib install $REQUIRED_LIBRARIES "Adafruit NeoPixel"; fi
 
-
       # Finally, we compile the sketch, using the FQBN that was set in the build matrix.
       - name: Compile all examples
+        env:
+          BUILD_PROPERTIES: ${{ toJson(matrix.examples-build-properties) }}
         run: |
-          if [ "${{ matrix.examples-include }}" == "" ]; then
-            echo -e "Compiling ALL examples for board ${{ matrix.arduino-boards-fqbn }} \n"
-            examples=($(find . -name "*.ino"))
-            for example in "${examples[@]}"; do # Loop over all example directories
-              example_name=$(basename $(dirname $example))
-              if [[ "${{ matrix.examples-exclude }}" == *"$example_name"* ]]; then
-                echo -e "Skipping $example_name \xe2\x9e\x9e" # Right arrow
+          BUILD_PROPERTIES=${BUILD_PROPERTIES#\{} # remove "{"
+          # if matrix.examples-build-properties are specified, create an associative shell array
+          if [[ $BUILD_PROPERTIES != "null" ]]; then declare -A EXAMPLE_BUILD_PROPERTIES_MAP="( $(echo $BUILD_PROPERTIES | sed -E 's/"(\w*)": *([^,}]*)[,}]/\[\1\]=\2/g' ) )"; fi
+          echo -e "Compiling examples for board ${{ matrix.arduino-boards-fqbn }} \n"
+          EXAMPLES=($(find . -name "*.ino"))
+          for example in "${EXAMPLES[@]}"; do # Loop over all example directories
+            EXAMPLE_NAME=$(basename $(dirname $example))
+            if [[ "${{ matrix.examples-exclude }}" == *"$EXAMPLE_NAME"* ]]; then
+              echo -e "Skipping $EXAMPLE_NAME \xe2\x9e\x9e" # Right arrow
+            else
+              # check if there is an entry in the associative array and create a compile parameter
+              if [[ "${EXAMPLE_BUILD_PROPERTIES_MAP[$EXAMPLE_NAME]}" != "" ]]; then
+                EXAMPLE_BUILD_PROPERTIES=${EXAMPLE_BUILD_PROPERTIES_MAP[$EXAMPLE_NAME]} # Set build flags on a per example basis
+                EXAMPLE_BUILD_PROPERTIES_STRING="with ${EXAMPLE_BUILD_PROPERTIES_MAP[$EXAMPLE_NAME]} " # to see it in the output
               else
-                echo -n "Compiling $example_name "
-                build_stdout=$(arduino-cli compile --verbose --warnings all --fqbn ${{ matrix.arduino-boards-fqbn }} $(dirname $example) 2>&1);
-                if [ $? -ne 0 ]; then 
-                  echo -e ""$RED"\xe2\x9c\x96" # If ok output a green checkmark else a red X and the command output.
-                  exit_code=1
-                  echo -e "$build_stdout \n"
-                else 
-                  echo -e ""$GREEN"\xe2\x9c\x93"
-                fi 
+                EXAMPLE_BUILD_PROPERTIES_STRING=""
               fi
-            done
-          
-          else
-            echo -e "Compiling SELECTED examples for board ${{ matrix.arduino-boards-fqbn }} \n"
-            for example in "${{ matrix.examples-include }}"; do
-              echo -n "Compiling $example "
-              build_stdout=$(arduino-cli compile --verbose --warnings all --fqbn ${{ matrix.arduino-boards-fqbn }} ./examples/$example 2>&1)
+              echo "arduino-cli compile --verbose --warnings all --fqbn ${{ matrix.arduino-boards-fqbn }} --build-properties build.extra_flags=\"${EXAMPLE_BUILD_PROPERTIES_MAP[$EXAMPLE_NAME]}\" $(dirname $example)"
+              echo -n "Compiling $EXAMPLE_NAME $EXAMPLE_BUILD_PROPERTIES_STRING"
+              build_stdout=$(arduino-cli compile --verbose --warnings all --fqbn ${{ matrix.arduino-boards-fqbn }} --build-properties build.extra_flags="${EXAMPLE_BUILD_PROPERTIES_MAP[$EXAMPLE_NAME]}" $(dirname $example) 2>&1);
               if [ $? -ne 0 ]; then 
                 echo -e ""$RED"\xe2\x9c\x96" # If ok output a green checkmark else a red X and the command output.
                 exit_code=1
-                  echo -e "$build_stdout \n"
+                echo -e "$build_stdout \n"
               else 
                 echo -e ""$GREEN"\xe2\x9c\x93"
-              fi
+              fi 
+            fi
           done
-          fi
           exit $exit_code
         shell: bash {0} # Needed to avoid an exit at first error
         
       ##########################################################
-      # THIS DOES NOT YET WORK  
+      # THIS CACHE TEST DOES NOT YET WORK  
       #- name: Cache Arduino packages
       # does not work, since the cache does not contain all installed platforms :-(
       # And we can not build separate caches for each platform 
