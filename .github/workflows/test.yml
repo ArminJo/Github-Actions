@@ -12,15 +12,15 @@ jobs:
     runs-on: ubuntu-latest # I picked Ubuntu to use shell scripts.
     
     env: 
-    # On the commandline directly it works with PlayRtttl "Adafruit NeoPixel" but not with 'PlayRtttl "Adafruit NeoPixel"' because it is seen as one long library name
-    # 1. Test with "$REQUIRED_LIBRARIES"  all variants are seen as one token/library
-    # 2. Test without " around $REQUIRED_LIBRARIES 
-    # '"PlayRtttl" "Adafruit NeoPixel"' fail, "PlayRtttl" and "Adafruit are both library names containing quotes
-    # "NeoPatterns PlayRtttl" works :-)
-    # NeoPatterns PlayRtttl "Adafruit NeoPixel" does not work "Adafruit and NeoPixel" are taken as library names
-    # "Adafruit NeoPixel" and 'Adafruit NeoPixel' is interpreted as "Adafruit + NeoPixel" or 'Adafruit + NeoPixel'
-      REQUIRED_LIBRARIES: " "
-      
+      # Space separated list with or without double quotes around the list. 
+      # If you need a libraries with a space in its name like Adafruit NeoPixel or Adafruit INA219
+      # You MUST put each library in one line and use double quotes at least for the library with a space in its name.
+      REQUIRED_LIBRARIES: 
+        Servo
+        "ESP32Servo"
+        "Adafruit NeoPixel"
+      REQUIRED_LIBRARIES1:
+              
       # Output colors
       RED: '\033[0;31m'
       GREEN: '\033[0;32m'
@@ -51,10 +51,13 @@ jobs:
           - arduino-boards-fqbn: digistump:avr:digispark-tiny1  # ATtiny85 board @1 MHz
             platform: digistump:avr
             # examples-build-properties / aka setting compiler.cpp.extra_flags does not work for digistump:avr platform
-            examples-exclude: "WhistleSwitch" # Space separated list of examples to exclude in build
+            examples-exclude: "WhistleSwitch Test" # Space separated list of (unique substrings of) example names to exclude in build
             
           - arduino-boards-fqbn: ATTinyCore:avr:attinyx5:chip=85,clock=1internal
             platform: ATTinyCore:avr
+            examples-exclude: 
+              WhistleSwitch 
+              "Test" # Space separated list of (unique substrings of) example names to exclude in build
             examples-build-properties:
               SimpleFrequencyDetector:
                 -DDEBUG
@@ -93,8 +96,70 @@ jobs:
       - name: Setup Arduino CLI
         uses: arduino/setup-arduino-cli@v1.0.0
 
-      - name: Dump selected matrix context
-        run: echo "matrix.examples-build-properties=${{ toJson(matrix.examples-build-properties) }}"
+      #- name: Cache Arduino packages
+      # does not work, since we can not build separate caches for each platform 
+      #  id: arduino15-packages-env.MATRIX_PLATFORM <- This is a syntax error and this too: arduino15-packages-${{ matrix.platform }}
+      #  uses: actions/cache@v1 # using version 1
+      #  with:
+      #    path: $HOME/.arduino15/packages/
+      #    key: arduino15-packages-env.MATRIX_PLATFORM
+      
+      - name: Dump variables
+        env:
+          EXAMPLES_EXCLUDE: ${{ toJson(matrix.examples-exclude) }} # the content as string in double quotes with escaped double quotes if one token contains one
+          REQUIRED_LIBRARIES_ENV: ${{ env.REQUIRED_LIBRARIES }}      
+        run: |
+          echo "matrix.examples-build-properties=${{ toJson(matrix.examples-build-properties) }}"
+          
+          
+          echo -e "\n\nREQUIRED_LIBRARIES test"
+          # here all quotes are escaped leading to have "Adafruit NeoPixel" or 'Adafruit NeoPixel' as 2 tokens each
+          echo \$REQUIRED_LIBRARIES=$REQUIRED_LIBRARIES
+          echo REQUIRED_LIBRARIES array=
+          for word in $REQUIRED_LIBRARIES; do
+            echo $word
+          done
+          
+          # here all quotes are escaped leading to have "Adafruit NeoPixel" or 'Adafruit NeoPixel' as 2 tokens each
+          echo \$REQUIRED_LIBRARIES_ENV=$REQUIRED_LIBRARIES_ENV
+          echo REQUIRED_LIBRARIES_ENV array=
+          for word in $REQUIRED_LIBRARIES_ENV; do
+            echo $word
+          done
+          
+          # This gives one line "Adafruit NeoPixel" as one token and the line Adafruit NeoPixel as 2 token
+          echo env.REQUIRED_LIBRARIES=${{ env.REQUIRED_LIBRARIES }} 
+          echo REQUIRED_LIBRARIES_ENV array=
+          for word in ${{ env.REQUIRED_LIBRARIES }} ; do
+            echo $word
+          done          
+          
+          echo -e "\n\nmatrix.examples-exclude test\n"
+          # 2 lines (without any double quotes) WhistleSwitch + Test give for all 3 test the same results as one line WhistleSwitch Test!
+          # If we have a quoted entry at one line it is taken as one token including the quotes
+          
+          # 1 line WhistleSwitch Test (without double quotes) give WhistleSwitch Test as 2 token "WhistleSwitch and Test"
+          # 2 lines WhistleSwitch + "Test" give "WhistleSwitch \"Test\"" and 2 token "WhistleSwitch and \"Test\""
+          echo env \$EXAMPLES_EXCLUDE=$EXAMPLES_EXCLUDE # gives "WhistleSwitch Test" or "WhistleSwitch \"Test\""
+          echo env EXAMPLES_EXCLUDE array=
+          for word in $EXAMPLES_EXCLUDE; do
+            echo $word
+          done
+          
+          # 1 line WhistleSwitch Test (without double quotes) give WhistleSwitch Test as 2 token WhistleSwitch and Test
+          EXCLUDE=${{ toJson(matrix.examples-exclude) }} # gives WhistleSwitch Test or WhistleSwitch "Test"
+          echo EXCLUDE=toJson...  =$EXCLUDE
+          echo EXCLUDE=toJson...  array=
+          for word in $EXCLUDE; do
+            echo $word
+          done
+          
+          # 1 line WhistleSwitch Test (without double quotes) give WhistleSwitch Test but as one token!
+          echo toJson\(matrix.examples-exclude\)=${{ toJson(matrix.examples-exclude) }} # gives WhistleSwitch Test or WhistleSwitch "Test"
+          echo toJson\(matrix.examples-exclude\) array=
+          for word in ${{ toJson(matrix.examples-exclude) }}; do
+            echo $word
+          done          
 
       - name: Connvert matrix to assoc array
         env:
@@ -144,8 +209,17 @@ jobs:
           # which arduino-cli # /opt/hostedtoolcache/arduino-cli/0.9.0/x64/arduino-cli
           
       - name: Install libraries
-        run: for word in $REQUIRED_LIBRARIES; do echo $word; done; if [[ "$REQUIRED_LIBRARIES" != "" ]]; then arduino-cli lib install $REQUIRED_LIBRARIES "Adafruit NeoPixel"; fi
+        run: |
+          if [[ "$REQUIRED_LIBRARIES" != "" ]]; then
+            arduino-cli lib install ${{ env.REQUIRED_LIBRARIES }}
+          fi
 
+      - name: Install libraries 1
+        run: |
+          if [[ "$REQUIRED_LIBRARIES1" != "" ]]; then
+            arduino-cli lib install ${{ env.REQUIRED_LIBRARIES1 }}
+          fi
+          
       # Finally, we compile the sketch, using the FQBN that was set in the build matrix.
       - name: Compile all examples
         env:
@@ -164,7 +238,9 @@ jobs:
               # check if there is an entry in the associative array and create a compile parameter
               echo "arduino-cli compile --verbose --warnings all --fqbn ${{ matrix.arduino-boards-fqbn }} --build-properties compiler.cpp.extra_flags=\"${PROP_MAP[$EXAMPLE_NAME]}\" $(dirname $example)"
               echo -n "Compiling $EXAMPLE_NAME "
-              if [[ "${PROP_MAP[$EXAMPLE_NAME]}" != "" ]]; then echo -n"with ${PROP_MAP[$EXAMPLE_NAME]} "; fi
+              if [[ "${PROP_MAP[$EXAMPLE_NAME]}" != "" ]]; then
+                echo -n "with ${PROP_MAP[$EXAMPLE_NAME]} "
+              fi
               build_stdout=$(arduino-cli compile --verbose --warnings all --fqbn ${{ matrix.arduino-boards-fqbn }} --build-properties compiler.cpp.extra_flags="${PROP_MAP[$EXAMPLE_NAME]}" $(dirname $example) 2>&1);
               if [ $? -ne 0 ]; then 
                 echo -e ""$RED"\xe2\x9c\x96" # If ok output a green checkmark else a red X and the command output.
@@ -180,11 +256,4 @@ jobs:
         
       ##########################################################
       # THIS CACHE TEST DOES NOT YET WORK  
-      #- name: Cache Arduino packages
-      # does not work, since the cache does not contain all installed platforms :-(
-      # And we can not build separate caches for each platform 
-      #  id: arduino15-packages-env.MATRIX_PLATFORM <- This is a syntax error and this too: arduino15-packages-${{ matrix.platform }}
-      #  uses: actions/cache@v1 # using version 1
-      #  with:
-      #    path: $HOME/.arduino15/packages/
-      #    key: arduino15-packages-env.MATRIX_PLATFORM
+
