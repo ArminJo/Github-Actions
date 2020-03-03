@@ -1,8 +1,10 @@
 # Github actions Test
 ### [Version 1.0.0]
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![Actions Status](https://github.com/ArminJo/Github-Actions-Test/workflows/build/badge.svg)](https://github.com/ArminJo/Github-Actions-Test/actions)
+[![Actions Status Release](https://github.com/ArminJo/Github-Actions-Test/workflows/LibraryBuild/badge.svg)](https://github.com/ArminJo/Github-Actions-Test/actions)
+[![Actions Status Test](https://github.com/ArminJo/Github-Actions-Test/workflows/test/badge.svg)](https://github.com/ArminJo/Github-Actions-Test/actions)
 [![Hit Counter](https://hitcounter.pythonanywhere.com/count/tag.svg?url=https%3A%2F%2Fgithub.com%2FArminJo%2FGithub-Actions-Test)](https://github.com/brentvollebregt/hit-counter)
+
 
 GitHub Action / workflow to test compile all exaples of an arduino library for different boards.<br/>
 
@@ -15,22 +17,26 @@ You can configure:
 
 # List of my GitHub workflows for Arduino libraries
 ## Minimal configuration
-- Arduino-FrequencyDetector [![Build Status](https://github.com/ArminJo/Arduino-FrequencyDetector/workflows/build/badge.svg)](https://github.com/ArminJo/Arduino-FrequencyDetector/actions)
-- Arduino-OpenWindowAlarm [![Build Status](https://github.com/ArminJo/Arduino-OpenWindowAlarm/workflows/build/badge.svg)](https://github.com/ArminJo/Arduino-OpenWindowAlarm/actions)
-- Talkie [![Build Status](https://github.com/ArminJo/Talkie/workflows/build/badge.svg)](https://github.com/ArminJo/Talkie/actions)
+- Arduino-FrequencyDetector [![Build Status](https://github.com/ArminJo/Arduino-FrequencyDetector/workflows/LibraryBuild/badge.svg)](https://github.com/ArminJo/Arduino-FrequencyDetector/actions)
+- Arduino-OpenWindowAlarm [![Build Status](https://github.com/ArminJo/Arduino-OpenWindowAlarm/workflows/LibraryBuild/badge.svg)](https://github.com/ArminJo/Arduino-OpenWindowAlarm/actions)
+- Talkie [![Build Status](https://github.com/ArminJo/Talkie/workflows/LibraryBuild/badge.svg)](https://github.com/ArminJo/Talkie/actions)
 ## Simple configuration
-- ATtinySerialOut [![Build Status](https://github.com/ArminJo/ATtinySerialOut/workflows/build/badge.svg)](https://github.com/ArminJo/ATtinySerialOut/actions)
-- Arduino-BlueDisplay [![Build Status](https://github.com/ArminJo/Arduino-BlueDisplay/workflows/build/badge.svg)](https://github.com/ArminJo/Arduino-BlueDisplay/actions)
-- Arduino-Utils [![Build Status](https://github.com/ArminJo/Arduino-Utils/workflows/build/badge.svg)](https://github.com/ArminJo/Arduino-Utils/actions)
-- EasyButtonAtInt01 [![Build Status](https://github.com/ArminJo/EasyButtonAtInt01/workflows/build/badge.svg)](https://github.com/ArminJo/EasyButtonAtInt01/actions)
-- irmp [![Build Status](https://github.com/ukw100/irmp/workflows/build/badge.svg)](https://github.com/ukw100/irmp/actions)
-- LightweightServo [![Build Status](https://github.com/ArminJo/LightweightServo/workflows/build/badge.svg)](https://github.com/ArminJo/LightweightServo/actions)
-- PlayRtttl [![Build Status](https://github.com/ArminJo/PlayRtttl/workflows/build/badge.svg)](https://github.com/ArminJo/PlayRtttl/actions)
-- QuadrupedControl [![Build Status](https://github.com/ArminJo/QuadrupedControl/workflows/build/badge.svg)](https://github.com/ArminJo/QuadrupedControl/actions)
+- ATtinySerialOut [![Build Status](https://github.com/ArminJo/ATtinySerialOut/workflows/LibraryBuild/badge.svg)](https://github.com/ArminJo/ATtinySerialOut/actions)
+- Arduino-BlueDisplay [![Build Status](https://github.com/ArminJo/Arduino-BlueDisplay/workflows/LibraryBuild/badge.svg)](https://github.com/ArminJo/Arduino-BlueDisplay/actions)
+- Arduino-Utils [![Build Status](https://github.com/ArminJo/Arduino-Utils/workflows/LibraryBuild/badge.svg)](https://github.com/ArminJo/Arduino-Utils/actions)
+- EasyButtonAtInt01 [![Build Status](https://github.com/ArminJo/EasyButtonAtInt01/workflows/LibraryBuild/badge.svg)](https://github.com/ArminJo/EasyButtonAtInt01/actions)
+- irmp [![Build Status](https://github.com/ukw100/irmp/workflows/LibraryBuild/badge.svg)](https://github.com/ukw100/irmp/actions)
+- LightweightServo [![Build Status](https://github.com/ArminJo/LightweightServo/workflows/LibraryBuild/badge.svg)](https://github.com/ArminJo/LightweightServo/actions)
+- PlayRtttl [![Build Status](https://github.com/ArminJo/PlayRtttl/workflows/LibraryBuild/badge.svg)](https://github.com/ArminJo/PlayRtttl/actions)
+- QuadrupedControl [![Build Status](https://github.com/ArminJo/QuadrupedControl/workflows/LibraryBuild/badge.svg)](https://github.com/ArminJo/QuadrupedControl/actions)
 
 ## Complex configuratuion
-- ServoEasing [![Build Status](https://github.com/ArminJo/ServoEasing/workflows/build/badge.svg)](https://github.com/ArminJo/ServoEasing/actions)
-- NeoPatterns [![Build Status](https://github.com/ArminJo/NeoPatterns/workflows/build/badge.svg)](https://github.com/ArminJo/NeoPatterns/actions)
+- ServoEasing [![Build Status](https://github.com/ArminJo/ServoEasing/workflows/LibraryBuild/badge.svg)](https://github.com/ArminJo/ServoEasing/actions)
+- NeoPatterns [![Build Status](https://github.com/ArminJo/NeoPatterns/workflows/LibraryBuild/badge.svg)](https://github.com/ArminJo/NeoPatterns/actions)
+
+## Complex configuratuion
+- ServoEasing [![Build Status](https://github.com/ArminJo/Sworkflows/LibraryBuild/badge.svg)](https://github.com/ArminJo/ServoEasing/actions)
+- NeoPatterns [![Build Status](https://github.com/ArminJo/NeoPatterns/workflows/LibraryBuild/badge.svg)](https://github.com/ArminJo/NeoPatterns/actions)
 
 
 <br/><br/>And here the background story, why this repository was created:

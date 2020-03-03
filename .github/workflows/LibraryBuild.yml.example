@@ -1,4 +1,4 @@
-# Before being able to push to my .github\workflows directories, 
+# Before being able to push to my .github\workflows directories,
 # I had to create a new personal token with workflow enabled at https://github.com/settings/tokens
 
 # This is the name of the workflow, visible on GitHub UI.
@@ -8,23 +8,21 @@ on: [push]
 jobs:
   build:
     name: ${{ matrix.arduino-boards-fqbn }} - test compiling examples
-    
+
     runs-on: ubuntu-latest # I picked Ubuntu to use shell scripts.
-    
-    env: 
-      # Space separated list with or without double quotes around the list. 
-      # If you need a libraries with a space in its name like Adafruit NeoPixel or Adafruit INA219
-      # I am sorry, but you must add them with double quotes in step "Install libraries" after $REQUIRED_LIBRARIES.
-      # e.g. then arduino-cli lib install $REQUIRED_LIBRARIES "Adafruit NeoPixel" "Adafruit INA219"; fi
-      # In this case the required libraries string must contain at least one character, you can use " ".
-      REQUIRED_LIBRARIES: "Servo ESP32Servo"
-      
+
+    env:
+      # Space separated list without double quotes around the list. 
+      # If you need a library with a space in its name, like Adafruit NeoPixel or Adafruit INA219, you must use double quotes
+      # around the name and have at least 2 entries, where the first must be without double quotes! You may use Servo as dummy entry.
+      REQUIRED_LIBRARIES: Servo ESP32Servo
+
       # Output colors
       RED: '\033[0;31m'
       GREEN: '\033[0;32m'
       YELLOW: '\033[1;33m'
       BLUE: '\033[0;34m'
-      
+
     strategy:
       matrix:
         # The matrix will produce one job for each configuration parameter of type `arduino-boards-fqbn`
@@ -46,7 +44,7 @@ jobs:
           - STM32:stm32:GenF1:pnum=BLUEPILL_F103C8
 
         # Choose the right platform for the boards we want to test. (maybe in the future Arduino will automatically do this for you).
-        # This works like this: when the fqbn is "arduino:avr:uno" the variable `platform` is set to "arduino:avr". 
+        # This works like this: when the fqbn is "arduino:avr:uno" the variable `platform` is set to "arduino:avr".
         # Just take the first 2 token of the fqbn - this cannot be automatically done by GitHub workflow :-(
         #############################################################################################################
         include:
@@ -57,9 +55,9 @@ jobs:
                 -DUSE_PCA9685_SERVO_EXPANDER
               PCA9685_ExpanderFor32Servos:
                 -DUSE_PCA9685_SERVO_EXPANDER
-            
+
           - arduino-boards-fqbn: arduino:avr:leonardo
-            platform: arduino:avr          
+            platform: arduino:avr
             examples-build-properties:
               PCA9685_Expander:
                 -DUSE_PCA9685_SERVO_EXPANDER
@@ -67,7 +65,7 @@ jobs:
                 -DUSE_PCA9685_SERVO_EXPANDER
 
           - arduino-boards-fqbn: arduino:avr:mega
-            platform: arduino:avr          
+            platform: arduino:avr
             examples-build-properties:
               PCA9685_Expander:
                 -DUSE_PCA9685_SERVO_EXPANDER
@@ -76,25 +74,25 @@ jobs:
 
           - arduino-boards-fqbn: arduino:sam:arduino_due_x
             platform: arduino:sam
-            examples-exclude: "QuadrupedControl RobotArmControl" # QuadrupedControl RobotArmControl because of missing EEprom
+            examples-exclude: QuadrupedControl RobotArmControl # QuadrupedControl RobotArmControl because of missing EEprom
             examples-build-properties:
               PCA9685_Expander:
                 -DUSE_PCA9685_SERVO_EXPANDER
               PCA9685_ExpanderFor32Servos:
                 -DUSE_PCA9685_SERVO_EXPANDER
-            
+
           - arduino-boards-fqbn: esp8266:esp8266:huzzah:eesz=4M3M,xtal=80
             platform: esp8266:esp8266
-            examples-exclude: "QuadrupedControl RobotArmControl SpeedTest" # SpeedTest because of only one analog input
+            examples-exclude: QuadrupedControl RobotArmControl SpeedTest # SpeedTest because of only one analog input
             examples-build-properties:
               PCA9685_Expander:
                 -DUSE_PCA9685_SERVO_EXPANDER
               PCA9685_ExpanderFor32Servos:
                 -DUSE_PCA9685_SERVO_EXPANDER
-            
+
           - arduino-boards-fqbn: esp32:esp32:featheresp32:FlashFreq=80
             platform: esp32:esp32
-            examples-exclude: "QuadrupedControl RobotArmControl" # Space separated list of examples to exclude in build
+            examples-exclude: QuadrupedControl RobotArmControl # Space separated list of (unique substrings of) example names to exclude in build
             examples-build-properties:
               PCA9685_Expander:
                 -DUSE_PCA9685_SERVO_EXPANDER
@@ -103,19 +101,19 @@ jobs:
 
           - arduino-boards-fqbn: STM32:stm32:GenF1:pnum=BLUEPILL_F103C8
             platform: STM32:stm32
-            examples-exclude: "QuadrupedControl RobotArmControl"
+            examples-exclude: QuadrupedControl RobotArmControl
             examples-build-properties:
               PCA9685_Expander:
                 -DUSE_PCA9685_SERVO_EXPANDER
               PCA9685_ExpanderFor32Servos:
                 -DUSE_PCA9685_SERVO_EXPANDER
-        
+
       # Do not cancel all jobs / architectures if one job fails
       fail-fast: false
 
     # This is the list of steps this job will run.
     steps:
-    
+
       # First of all, we clone the repo using the `checkout` action.
       - name: Checkout
         uses: actions/checkout@master
@@ -124,12 +122,12 @@ jobs:
       # configure the Arduino CLI on the system.
       - name: Setup Arduino CLI
         uses: arduino/setup-arduino-cli@v1.0.0
-        
+
       - name: Link this repository as Arduino library
         run: |
           mkdir -p $HOME/Arduino/libraries
           ln -s $PWD $HOME/Arduino/libraries/.
-        
+
       - name: Install platform from build matrix
         run: |
           arduino-cli core update-index
@@ -137,10 +135,10 @@ jobs:
           if [[ ${{  matrix.platform }} != *"arduino"* && ! -f ./arduino-cli.yaml ]]; then echo -e ""$RED"Non Arduino platform ${{  matrix.platform }} requested, but file arduino-cli.yaml is missing."; exit 1; fi
           arduino-cli core install ${{ matrix.platform }} # for each job / board one platform is installed
           if [ ${{  matrix.platform }} == "esp32:esp32" ]; then pip install pyserial; fi
-          
+
       - name: Install libraries
-        run: if [ "$REQUIRED_LIBRARIES" != "" ]; then arduino-cli lib install $REQUIRED_LIBRARIES; fi
-                
+        run: if [[ "$REQUIRED_LIBRARIES" != "" ]]; then arduino-cli lib install ${{ env.REQUIRED_LIBRARIES }}; fi
+
       # Finally, we compile the sketch, using the FQBN that was set in the build matrix.
       - name: Compile all examples
         env:
@@ -160,13 +158,13 @@ jobs:
               echo -n "Compiling $EXAMPLE_NAME "
               if [[ "${PROP_MAP[$EXAMPLE_NAME]}" != "" ]]; then echo -n "with ${PROP_MAP[$EXAMPLE_NAME]} "; fi
               build_stdout=$(arduino-cli compile --verbose --warnings all --fqbn ${{ matrix.arduino-boards-fqbn }} --build-properties compiler.cpp.extra_flags="${PROP_MAP[$EXAMPLE_NAME]}" $(dirname $example) 2>&1);
-              if [ $? -ne 0 ]; then 
+              if [ $? -ne 0 ]; then
                 echo -e ""$RED"\xe2\x9c\x96" # If ok output a green checkmark else a red X and the command output.
                 exit_code=1
                 echo -e "$build_stdout \n"
-              else 
+              else
                 echo -e ""$GREEN"\xe2\x9c\x93"
-              fi 
+              fi
             fi
           done
           exit $exit_code
