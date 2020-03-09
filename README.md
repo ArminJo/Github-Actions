@@ -1,8 +1,8 @@
 # Github actions Test
 ### [Version 1.0.0]
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![Actions Status Release](https://github.com/ArminJo/Github-Actions-Test/workflows/LibraryBuild/badge.svg)](https://github.com/ArminJo/Github-Actions-Test/actions)
-[![Actions Status Test](https://github.com/ArminJo/Github-Actions-Test/workflows/test/badge.svg)](https://github.com/ArminJo/Github-Actions-Test/actions)
+[![Actions Status Release](https://github.com/ArminJo/Github-Actions/workflows/LibraryBuild/badge.svg)](https://github.com/ArminJo/Github-Actions/actions)
+[![Actions Status Test](https://github.com/ArminJo/Github-Actions/workflows/test/badge.svg)](https://github.com/ArminJo/Github-Actions/actions)
 [![Hit Counter](https://hitcounter.pythonanywhere.com/count/tag.svg?url=https%3A%2F%2Fgithub.com%2FArminJo%2FGithub-Actions-Test)](https://github.com/brentvollebregt/hit-counter)
 
 
