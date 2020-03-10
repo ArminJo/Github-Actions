@@ -58,7 +58,7 @@
  *  Press the button once for range 1, twice for range 2 etc. Each button press is echoed by the feedback LED.
  *  Inactivity for PROGRAM_MODE_SIMPLE_END_DETECT_MILLIS (1.5 seconds) ends the programming mode
  *  and the feedback LED echoes the number of button presses recognized.
- *  The needed duration of signal match to toggle the relay is fixed at MATCH_MILLIS_NEEDED_DEFAULT (1.2 seconds).
+ *  The required duration of signal match to toggle the relay is fixed at MATCH_MILLIS_NEEDED_DEFAULT (1.2 seconds).
  *
  *  ADVANCED PROGRAMMING
  *  After entering the advanced programming state, whistle the pitch you want to detect, then press the button again.
@@ -66,7 +66,7 @@
  *  No timeout here!
  *
  *  After button release, you may press the button again before the PROGRAM_MODE_ADVANCED_END_DETECT_MILLIS (3 seconds) timeout.
- *  The duration of this second press is taken as the needed duration for the signal match to toggle the relay.
+ *  The duration of this second press is taken as the required duration for the signal match to toggle the relay.
  *  Otherwise the  MATCH_MILLIS_NEEDED_DEFAULT (1.2 seconds) are taken.
  *  After timeout of PROGRAM_MODE_TIMEOUT_MILLIS (5 seconds) the advanced programming mode is ended
  *  and the effective duration is echoed by the feedback LED.
@@ -298,7 +298,7 @@ uint16_t predefinedRangesEnd[] = { 2050, 1680, 1480, 1280, 1130, 990, 1900, 1530
 /*
  * Timing
  */
-// Milliseconds (converted to number of readings) of needed valid readings (FrequencyRaw > SIGNAL_MAX_ERROR_CODE) before any (lower, match, higher) match
+// Milliseconds (converted to number of readings) of required valid readings (FrequencyRaw > SIGNAL_MAX_ERROR_CODE) before any (lower, match, higher) match
 // to avoid short flashes at random signal input
 #define MIN_NO_DROPOUT_MILLIS_BEFORE_ANY_MATCH 400
 #define MATCH_MILLIS_NEEDED_DEFAULT (1200 - MIN_NO_DROPOUT_MILLIS_BEFORE_ANY_MATCH) // Milliseconds of frequency detector indicating successful match before relay toggle
@@ -342,7 +342,7 @@ TIMEOUT_RELAY_ON_SIGNAL_MINUTES_3 };
 //
 
 struct EepromParameterStruct {
-    uint16_t MillisNeededForValidMatch; // ms needed for accepting match
+    uint16_t MillisNeededForValidMatch; // ms required for accepting match
     uint16_t FrequencyMin;
     uint16_t FrequencyMax;
     uint8_t RelayOnTimeoutIndex;
@@ -381,7 +381,7 @@ struct WhistleSwitchControlStruct {
     uint8_t ButtonPressCounter;
 
     int16_t MatchValidCount; // count for valid matches after last STATE_LED_OFF
-    int16_t MatchValidNeeded; // valid matches detected needed for accepting match, i.e. for toggling relay := MillisNeededForValidMatch/timeOfReading
+    int16_t MatchValidNeeded; // valid matches detected required for accepting match, i.e. for toggling relay := MillisNeededForValidMatch/timeOfReading
     uint16_t MillisNeededForValidMatch;
 
 } WhistleSwitchControl;
@@ -1267,7 +1267,7 @@ void getAdvancedProgrammingFrequencyRange() {
 #if defined (INFO) && (defined (__AVR_ATmega328P__) || defined (__AVR_ATmega328__))
         Serial.println(F("Before the 5 seconds timeout, you may press the button again."));
         Serial.println(
-                F("The duration of this second press is taken as the needed duration for the signal match to toggle the relay."));
+                F("The duration of this second press is taken as the required duration for the signal match to toggle the relay."));
         Serial.println(F("If timeout happens, then 1.2 seconds are taken for duration."));
 #endif
     }
