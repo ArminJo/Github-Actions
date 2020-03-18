@@ -13,7 +13,7 @@ This repo contains 3 [scripts](https://github.com/ArminJo/Github-Actions/tree/ma
 - test.yml for internal testing.
 
 # Configuration options
-### If you want to build for other platforms than `arduino:avr:` do not forget to include the `arduino-cli.yaml` file in your repository and check if the required url is contained.
+### If you want to build for other platforms than `arduino:avr:` do not forget to specify the `platform-url` parameter per board **or** include the `arduino-cli.yaml` file in your repository root and check if the required url is contained.
 
 #### - **Libraries** required for your builds on a per build basis (which is sufficient) with [`REQUIRED_LIBRARIES:`](https://github.com/ArminJo/Github-Actions/blob/master/.github/workflows/LibraryBuild.yml.example#L25)<br/>
 Space separated list without double quotes around the list.<br/>
@@ -22,6 +22,20 @@ around the name and have at least 2 entries, where the first must be without dou
 
 ```yaml
 REQUIRED_LIBRARIES: Servo "Adafruit NeoPixel"
+```
+
+#### - **platform-url** for each board with e.g. [`platform-url:`] if there is no `arduino-cli.yaml` file containing the URL in your repository root.
+Sample URL's are:
+- http://drazzy.com/package_drazzy.com_index.json
+- http://digistump.com/package_digistump_index.json
+- http://arduino.esp8266.com/stable/package_esp8266com_index.json
+- https://dl.espressif.com/dl/package_esp32_index.json
+- https://github.com/stm32duino/BoardManagerFiles/raw/dev/STM32/package_stm_index.json
+- https://raw.githubusercontent.com/sparkfun/Arduino_Boards/master/IDE_Board_Manager/package_sparkfun_index.json
+- https://files.pololu.com/arduino/package_pololu_index.json
+
+```yaml
+platform-url: http://arduino.esp8266.com/stable/package_esp8266com_index.json
 ```
 
 #### - **Build parameter** like `-DDEBUG` for each board/example combination with [`examples-build-properties:`](https://github.com/ArminJo/Github-Actions/blob/master/.github/workflows/LibraryBuild.yml.example#L62).
@@ -54,6 +68,19 @@ You may add a suffix behind the **fqbn** with "|" to specify one board for e.g. 
 
 # GitHub client integration
 To enable my smartgit client to commit to the `.github/workflow` directory without errors, I had to create a new [**Personal access token**](https://github.com/settings/tokens) with repo and **workflow rights** and import it in my client. See also [GitHub documentation for personal access token](https://help.github.com/en/github/authenticating-to-github/creating-a-personal-access-token-for-the-command-line).
+
+
+## Inputs of arduino-compile-examples Action
+
+### `cli-version`
+The version of `arduino-cli` to use. Default `"latest"`.
+### `libraries`
+### `fqbn`
+### `platform-url`
+### `examples-exclude`
+### `build-properties`
+
+## Example usage
 
 # List of my GitHub workflows for Arduino libraries
 ## Minimal configuration

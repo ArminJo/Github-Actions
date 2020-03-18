@@ -47,26 +47,24 @@ jobs:
           - arduino:avr:uno|trace
           - digistump:avr:digispark-tiny1
           - ATTinyCore:avr:attinyx5:chip=85,clock=1internal
+          - esp8266:esp8266:huzzah:eesz=4M3M,xtal=80
 
-        # Choose the right platform for the boards we want to test. (maybe in the future Arduino will automatically do this for you)
-        # This works like this: when the fqbn is "arduino:avr:uno" the variable `platform` is set to "arduino:avr".
-        # Just take the first 2 token of the fqbn - this cannot be automatically done by GitHub workflow :-(
+        # Specify parameters for each board.
+        # Parameters can be: examples-exclude and examples-build-properties
         #############################################################################################################
         include:
           - arduino-boards-fqbn: digistump:avr:digispark-tiny1  # ATtiny85 board @1 MHz
-            platform: digistump:avr
             platform-url: http://digistump.com/package_digistump_index.json
             # examples-build-properties / aka setting compiler.cpp.extra_flags does not work for digistump:avr platform
             examples-exclude: WhistleSwitch "Test" # Space separated list of (unique substrings of) example names to exclude in build
 
           - arduino-boards-fqbn: ATTinyCore:avr:attinyx5:chip=85,clock=1internal
-            platform: ATTinyCore:avr
+            platform-url: http://drazzy.com/package_drazzy.com_index.json
             examples-build-properties:
               WhistleSwitch:
                 -DFREQUENCY_RANGE_LOW
 
           - arduino-boards-fqbn: arduino:avr:uno
-            platform: arduino:avr
             examples-exclude: 50Hz # Space separated list of (unique substrings of) example names to exclude in build
             SimpleFrequencyDetector: -DDEBUG
             WhistleSwitch: -DINFO
@@ -75,7 +73,6 @@ jobs:
                 -DDEBUG
 
           - arduino-boards-fqbn: arduino:avr:uno|trace
-            platform: arduino:avr
             examples-exclude: 50Hz # Space separated list of (unique substrings of) example names to exclude in build
             SimpleFrequencyDetector: -DTRACE
             WhistleSwitch: -DTRACE
@@ -83,6 +80,10 @@ jobs:
               WhistleSwitch:
                 -DDEBUG
                 -DTRACE
+
+          - arduino-boards-fqbn: esp8266:esp8266:huzzah:eesz=4M3M,xtal=80
+            platform-url: http://arduino.esp8266.com/stable/package_esp8266com_index.json
+            examples-exclude: WhistleSwitch 50Hz SimpleFrequencyDetector
 
 ######################################################
 # End of configuration, start of fixed script section
@@ -113,7 +114,7 @@ jobs:
 
       #- name: Cache Arduino packages
       # does not work, since we can not build separate caches for each platform
-      #  id: arduino15-packages-env.MATRIX_PLATFORM <- This is a syntax error and this too: arduino15-packages-${{ matrix.platform }}
+      #  id: arduino15-packages-env.MATRIX_PLATFORM <- This is a syntax error and this too: arduino15-packages-${PLATFORM}
       #  uses: actions/cache@v1 # using version 1
       #  with:
       #    path: $HOME/.arduino15/packages/
@@ -191,9 +192,9 @@ jobs:
             echo $BUILD_PROPERTIES | sed -E 's/"(\w*)": *([^,}]*)[,}]/\[\1\]=\2/g'
             declare -A PROP_MAP="( $(echo $BUILD_PROPERTIES | sed -E 's/"(\w*)": *([^,}]*)[,}]/\[\1\]=\2/g' ) )"
             declare -p PROP_MAP # print properties of PROP_MAP
-            EXAMPLE=SimpleFrequencyDetector
-            echo Property of $EXAMPLE= ${PROP_MAP[$EXAMPLE]}
-            echo Property of 50Hz= ${PROP_MAP[50Hz]}
+            # empty assoc arrays give error if key is <number><test>
+            echo Property of 50Hz= ${PROP_MAP[50Hz]} # This works and gives "" since PROP_MAP is not empty
+            # echo Property of 50Hz= ${P_M[50Hz]} # This gives error: value too great for base (error token is "50Hz")
             EXAMPLE_NAME=50Hz
             if [[ "${PROP_MAP[$EXAMPLE_NAME]}" != "" ]]; then
               echo -n "with ${PROP_MAP[$EXAMPLE_NAME]} "
@@ -218,16 +219,19 @@ jobs:
         env: 
           FQBN: ${{ matrix.arduino-boards-fqbn }}
         run: |
-          arduino-cli core update-index
-          BRAND=${FQBN%%:*}
-          echo BRAND=${BRAND}
-          FAMILY=${REMAINDER%%:*}
-          echo FAMILY=${FAMILY}
-          REMAINDER=${FQBN#*:}; PLATFORM=${FQBN%%:*}:${REMAINDER%%:*}
+          remainder=${FQBN#*:}; PLATFORM=${FQBN%%:*}:${remainder%%:*}
           echo PLATFORM=${PLATFORM}
-          if [[ ${PLATFORM} != *"arduino"* && ! -f ./arduino-cli.yaml ]]; then echo -e ""$RED"Non Arduino platform ${PLATFORM} requested, but file arduino-cli.yaml is missing."; exit 1; fi
-          arduino-cli core install ${PLATFORM} # for each job / board one platform is installed
-          arduino-cli board listall ${PLATFORM}
+          #if [[ ${PLATFORM} != *"arduino"* && ! -f ./arduino-cli.yaml ]]; then echo -e ""$RED"Non Arduino platform ${PLATFORM} requested, but file arduino-cli.yaml is missing."; exit 1; fi
+          if [[ "${{ matrix.platform-url }}" != "" ]]; then
+            arduino-cli core update-index --additional-urls "${{ matrix.platform-url }}" # must specify --additional-urls here
+            echo -e "arduino-cli core install ${PLATFORM} --additional-urls \"${{ matrix.platform-url }}\""
+            arduino-cli core install ${PLATFORM} --additional-urls "${{ matrix.platform-url }}" # for each job / board one platform is installed
+          else
+            arduino-cli core update-index
+            echo -e "arduino-cli core install ${PLATFORM}"
+            arduino-cli core install ${PLATFORM} # for each job / board one platform is installed
+          fi
+          arduino-cli board listall
           if [ "${PLATFORM}" == "esp32:esp32" ]; then pip install pyserial; fi
 
       - name: List installed boards with their FQBN

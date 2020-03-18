@@ -52,12 +52,12 @@ jobs:
           - esp32:esp32:featheresp32:FlashFreq=80
           - STM32:stm32:GenF1:pnum=BLUEPILL_F103C8
 
-        # Choose the right platform for the boards we want to test. (maybe in the future Arduino will automatically do this for you).
-        # This works like this: when the fqbn is "arduino:avr:uno" the variable `platform` is set to "arduino:avr".
+        # Specify parameters for each board.
+        # Parameters can be: platform-url, examples-exclude and examples-build-properties
+        # With examples-exclude you may exclude specific examples for a board. Use a space separated list.
         #############################################################################################################
         include:
           - arduino-boards-fqbn: arduino:avr:uno
-            platform: arduino:avr
             examples-build-properties: # the flags were put in compiler.cpp.extra_flags
               PCA9685_Expander:
                 -DUSE_PCA9685_SERVO_EXPANDER
@@ -65,7 +65,6 @@ jobs:
                 -DUSE_PCA9685_SERVO_EXPANDER
 
           - arduino-boards-fqbn: arduino:avr:uno|trace
-            platform: arduino:avr
             examples-build-properties: # the flags were put in compiler.cpp.extra_flags
               PCA9685_Expander:
                 -DUSE_PCA9685_SERVO_EXPANDER
@@ -75,7 +74,6 @@ jobs:
                 -DTRACE
 
           - arduino-boards-fqbn: arduino:avr:leonardo
-            platform: arduino:avr
             examples-build-properties:
               PCA9685_Expander:
                 -DUSE_PCA9685_SERVO_EXPANDER
@@ -83,7 +81,6 @@ jobs:
                 -DUSE_PCA9685_SERVO_EXPANDER
 
           - arduino-boards-fqbn: arduino:avr:mega
-            platform: arduino:avr
             examples-build-properties:
               PCA9685_Expander:
                 -DUSE_PCA9685_SERVO_EXPANDER
@@ -91,7 +88,6 @@ jobs:
                 -DUSE_PCA9685_SERVO_EXPANDER
 
           - arduino-boards-fqbn: arduino:sam:arduino_due_x
-            platform: arduino:sam
             examples-exclude: QuadrupedControl RobotArmControl # QuadrupedControl RobotArmControl because of missing EEprom
             examples-build-properties:
               PCA9685_Expander:
@@ -100,7 +96,7 @@ jobs:
                 -DUSE_PCA9685_SERVO_EXPANDER
 
           - arduino-boards-fqbn: esp8266:esp8266:huzzah:eesz=4M3M,xtal=80
-            platform: esp8266:esp8266
+            platform-url: http://arduino.esp8266.com/stable/package_esp8266com_index.json
             examples-exclude: QuadrupedControl RobotArmControl SpeedTest # SpeedTest because of only one analog input
             examples-build-properties:
               PCA9685_Expander:
@@ -109,7 +105,7 @@ jobs:
                 -DUSE_PCA9685_SERVO_EXPANDER
 
           - arduino-boards-fqbn: esp32:esp32:featheresp32:FlashFreq=80
-            platform: esp32:esp32
+            platform-url: https://dl.espressif.com/dl/package_esp32_index.json
             examples-exclude: QuadrupedControl RobotArmControl # Space separated list of (unique substrings of) example names to exclude in build
             examples-build-properties:
               PCA9685_Expander:
@@ -118,7 +114,7 @@ jobs:
                 -DUSE_PCA9685_SERVO_EXPANDER
 
           - arduino-boards-fqbn: STM32:stm32:GenF1:pnum=BLUEPILL_F103C8
-            platform: STM32:stm32
+            platform-url: https://github.com/stm32duino/BoardManagerFiles/raw/dev/STM32/package_stm_index.json
             examples-exclude: QuadrupedControl RobotArmControl
             examples-build-properties:
               PCA9685_Expander:
@@ -154,11 +150,19 @@ jobs:
         env:
           FQBN: ${{ matrix.arduino-boards-fqbn }}
         run: |
-          arduino-cli core update-index
           remainder=${FQBN#*:}; PLATFORM=${FQBN%%:*}:${remainder%%:*}
-          if [[ ${{  matrix.platform }} != *"arduino"* && ! -f ./arduino-cli.yaml ]]; then echo -e ""$RED"Non Arduino platform ${PLATFORM} requested, but file arduino-cli.yaml is missing."; exit 1; fi
-          arduino-cli core install ${PLATFORM} # for each job / board one platform is installed
-          if [ "${PLATFORM}" == "esp32:esp32" ]; then pip install pyserial; fi
+          if [[ ${PLATFORM} != *"arduino"* && ! (-f ./arduino-cli.yaml || "${{ matrix.platform-url }}" != ""  ) ]]; then
+            echo -e ""$RED"Non Arduino platform ${PLATFORM} requested, but \"platform-url\" parameter and file arduino-cli.yaml are missing."; exit 1
+          fi
+          if [[ "${{ matrix.platform-url }}" != "" ]]; then
+            arduino-cli core update-index --additional-urls "${{ matrix.platform-url }}"
+            arduino-cli core install ${PLATFORM} --additional-urls "${{ matrix.platform-url }}" # for each job / board one platform is installed
+          else
+            arduino-cli core update-index
+            arduino-cli core install ${PLATFORM} # for each job / board one platform is installed
+          fi
+          arduino-cli board listall
+          if [ ${PLATFORM} == "esp32:esp32" ]; then pip install pyserial; fi
 
       - name: Install libraries
         run: if [[ "$REQUIRED_LIBRARIES" != "" ]]; then arduino-cli lib install ${{ env.REQUIRED_LIBRARIES }}; fi
