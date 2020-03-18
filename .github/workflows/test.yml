@@ -10,7 +10,13 @@
 
 # This is the name of the workflow, visible on GitHub UI.
 name: test
-on: [push, pull_request] # see: https://help.github.com/en/actions/reference/events-that-trigger-workflows#pull-request-event-pull_request
+on: 
+  push: # see: https://help.github.com/en/actions/reference/events-that-trigger-workflows#pull-request-event-pull_request
+    paths:
+    - '**.ino'
+    - '**.cpp'
+    - '**.h'
+    - '**test.yml'
 
 jobs:
   build:
@@ -23,7 +29,8 @@ jobs:
       # If you need a library with a space in its name, like Adafruit NeoPixel or Adafruit INA219, you must use double quotes
       # around the name and have at least 2 entries, where the first must be without double quotes! You may use Servo as dummy entry.
       REQUIRED_LIBRARIES: Servo "Adafruit NeoPixel"
-
+      CLI_VERSION: latest
+      
       # Global color definitions for output colors
       RED: '\033[0;31m'
       GREEN: '\033[0;32m'
@@ -110,8 +117,28 @@ jobs:
       # We use the `arduino/setup-arduino-cli` action to install and
       # configure the Arduino CLI on the system.
       - name: Setup Arduino CLI
-        uses: arduino/setup-arduino-cli@v1.0.0
-
+        run: |
+          # if not already cached, download and install arduino IDE
+          echo -n "arduino-cli "
+          if [ ! -f $HOME/arduino_ide/arduino ]; then
+            echo -n "downloading: "
+            wget --quiet https://downloads.arduino.cc/arduino-cli/arduino-cli_${CLI_VERSION}_Linux_64bit.tar.gz
+            if [ $? -ne 0 ]; then echo -e """$RED""\xe2\x9c\x96"; else echo -e """$GREEN""\xe2\x9c\x93"; fi
+            echo -n "Upacking arduino-cli to ${HOME}/arduino_ide:  "
+            [ ! -d $HOME/arduino_ide/ ] && mkdir $HOME/arduino_ide
+            tar xf arduino-cli_${CLI_VERSION}_Linux_64bit.tar.gz -C $HOME/arduino_ide/
+            if [ $? -ne 0 ]; then echo -e """$RED""\xe2\x9c\x96"; else echo -e """$GREEN""\xe2\x9c\x93"; fi
+            ls -l $HOME/arduino_ide/*
+            ls -l $HOME
+            touch $HOME/arduino_ide/$CLI_VERSION
+          else
+            echo -e "cached: ""$GREEN""\xe2\x9c\x93"
+          fi
+          echo "::add-path::${HOME}/arduino_ide" # add to path for next steps
+          
+          echo RUNNER_TOOL_CACHE=$RUNNER_TOOL_CACHE # /opt/hostedtoolcache
+          echo AGENT_TOOLSDIRECTORY=$AGENT_TOOLSDIRECTORY # /opt/hostedtoolcache
+          
       #- name: Cache Arduino packages
       # does not work, since we can not build separate caches for each platform
       #  id: arduino15-packages-env.MATRIX_PLATFORM <- This is a syntax error and this too: arduino15-packages-${PLATFORM}
@@ -125,6 +152,11 @@ jobs:
           REQUIRED_LIBRARIES_ENV: ${{ env.REQUIRED_LIBRARIES }}
           EXAMPLES_EXCLUDE: ${{ toJson(matrix.examples-exclude) }} # the content as string in double quotes with escaped double quotes if one token contains one
         run: |
+          echo PWD=$PWD # /home/runner/work/Github-Actions/Github-Actions
+          ls -l $PWD
+          echo HOME=$HOME # /home/runner
+          ls -l $HOME
+          echo PATH=$PATH
           echo "matrix.examples-build-properties=${{ toJson(matrix.examples-build-properties) }}"
 
 
@@ -178,6 +210,8 @@ jobs:
           for word in ${{ toJson(matrix.examples-exclude) }}; do
             echo $word
           done
+          echo set=
+          set
 
       - name: Connvert matrix to assoc array
         env:
@@ -214,6 +248,8 @@ jobs:
         run: |
           mkdir -p $HOME/Arduino/libraries
           ln -s $PWD $HOME/Arduino/libraries/.
+          ls -l $HOME/Arduino/libraries/
+          ls -l $HOME
 
       - name: Install platform from build matrix
         env: 
@@ -221,14 +257,16 @@ jobs:
         run: |
           remainder=${FQBN#*:}; PLATFORM=${FQBN%%:*}:${remainder%%:*}
           echo PLATFORM=${PLATFORM}
-          #if [[ ${PLATFORM} != *"arduino"* && ! -f ./arduino-cli.yaml ]]; then echo -e ""$RED"Non Arduino platform ${PLATFORM} requested, but file arduino-cli.yaml is missing."; exit 1; fi
+          if [[ ${PLATFORM} != *"arduino"* && ! (-f ./arduino-cli.yaml || "${{ matrix.platform-url }}" != ""  ) ]]; then
+            echo -e "::error::Non Arduino platform ${PLATFORM} requested, but \"platform-url\" parameter and file arduino-cli.yaml are missing."; exit 1
+          fi
           if [[ "${{ matrix.platform-url }}" != "" ]]; then
             arduino-cli core update-index --additional-urls "${{ matrix.platform-url }}" # must specify --additional-urls here
             echo -e "arduino-cli core install ${PLATFORM} --additional-urls \"${{ matrix.platform-url }}\""
             arduino-cli core install ${PLATFORM} --additional-urls "${{ matrix.platform-url }}" # for each job / board one platform is installed
           else
             arduino-cli core update-index
-            echo -e "arduino-cli core install ${PLATFORM}"
+            echo "arduino-cli core install ${PLATFORM}"
             arduino-cli core install ${PLATFORM} # for each job / board one platform is installed
           fi
           arduino-cli board listall
@@ -271,6 +309,7 @@ jobs:
               build_stdout=$(arduino-cli compile --verbose --warnings all --fqbn ${FQBN%|*} --build-properties compiler.cpp.extra_flags="${PROP_MAP[$EXAMPLE_NAME]}" $(dirname $example) 2>&1);
               if [ $? -ne 0 ]; then
                 echo -e ""$RED"\xe2\x9c\x96" # If ok output a green checkmark else a red X and the command output.
+                echo "::error::Compile of  $EXAMPLE_NAME ${PROP_MAP[$EXAMPLE_NAME]} failed"
                 exit_code=1
                 echo -e "$build_stdout \n"
               else

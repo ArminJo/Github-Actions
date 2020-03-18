@@ -87,7 +87,7 @@ jobs:
         run: |
           remainder=${FQBN#*:}; PLATFORM=${FQBN%%:*}:${remainder%%:*}
           if [[ ${PLATFORM} != *"arduino"* && ! (-f ./arduino-cli.yaml || "${{ matrix.platform-url }}" != ""  ) ]]; then
-            echo -e ""$RED"Non Arduino platform ${PLATFORM} requested, but \"platform-url\" parameter and file arduino-cli.yaml are missing."; exit 1
+            echo "::error::Non Arduino platform ${PLATFORM} requested, but \"platform-url\" parameter and file arduino-cli.yaml are missing."; exit 1
           fi
           if [[ "${{ matrix.platform-url }}" != "" ]]; then
             arduino-cli core update-index --additional-urls "${{ matrix.platform-url }}"
@@ -132,6 +132,7 @@ jobs:
               build_stdout=$(arduino-cli compile --verbose --warnings all --fqbn ${FQBN%|*} --build-properties compiler.cpp.extra_flags="${PROP_MAP[$EXAMPLE_NAME]}" $(dirname $example) 2>&1);
               if [ $? -ne 0 ]; then
                 echo -e ""$RED"\xe2\x9c\x96" # If ok output a green checkmark else a red X and the command output.
+                echo "::error::Compile of  $EXAMPLE_NAME ${PROP_MAP[$EXAMPLE_NAME]} failed"
                 exit_code=1
                 echo -e "$build_stdout \n"
               else
