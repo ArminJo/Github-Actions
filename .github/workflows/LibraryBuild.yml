@@ -115,7 +115,7 @@ jobs:
         run: |
           BUILD_PROPERTIES=${BUILD_PROPERTIES#\{} # remove "{"
           # if matrix.examples-build-properties are specified, create an associative shell array
-          if [[ $BUILD_PROPERTIES != "null" ]]; then declare -A PROP_MAP="( $(echo $BUILD_PROPERTIES | sed -E 's/"(\w*)": *([^,}]*)[,}]/\[\1\]=\2/g' ) )"; fi
+          if [[ $BUILD_PROPERTIES != "null" ]]; then declare -A PROP_MAP="( $(echo $BUILD_PROPERTIES | sed -E 's/"(\w*)": *([^,}]*)[,}]/\[\1\]=\2/g' ) )"; else declare -A PROP_MAP=( [dummy]=dummy ); fi
           echo -e "Compiling examples for board ${{ matrix.arduino-boards-fqbn }} \n"
           EXAMPLES=($(find . -name "*.ino"))
           for example in "${EXAMPLES[@]}"; do # Loop over all example directories

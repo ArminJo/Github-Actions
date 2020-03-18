@@ -66,19 +66,22 @@ jobs:
 
           - arduino-boards-fqbn: arduino:avr:uno
             platform: arduino:avr
+            examples-exclude: 50Hz # Space separated list of (unique substrings of) example names to exclude in build
             SimpleFrequencyDetector: -DDEBUG
             WhistleSwitch: -DINFO
             examples-build-properties:
               WhistleSwitch:
                 -DDEBUG
-                
+
           - arduino-boards-fqbn: arduino:avr:uno|trace
             platform: arduino:avr
+            examples-exclude: 50Hz # Space separated list of (unique substrings of) example names to exclude in build
             SimpleFrequencyDetector: -DTRACE
             WhistleSwitch: -DTRACE
             examples-build-properties:
               WhistleSwitch:
-                -DTRACE               
+                -DDEBUG
+                -DTRACE
 
 ######################################################
 # End of configuration, start of fixed script section
@@ -183,11 +186,17 @@ jobs:
           echo BUILD_PROPERTIES=$BUILD_PROPERTIES
           if [[ $BUILD_PROPERTIES != "null" ]]; then
           # (\w*): * first token before the colon and spaces, ([^,}]*) token after colon and spaces up to "," or "}", [,}] trailing characters
+            echo 'sed result of $BUILD_PROPERTIES | '\''s/"(\w*)": *([^,}]*)[,}]/\[\1\]=\2/g'\''=' # line 6
             echo $BUILD_PROPERTIES | sed -E 's/"(\w*)": *([^,}]*)[,}]/\[\1\]=\2/g'
             declare -A PROP_MAP="( $(echo $BUILD_PROPERTIES | sed -E 's/"(\w*)": *([^,}]*)[,}]/\[\1\]=\2/g' ) )"
-            declare -p PROP_MAP
+            declare -p PROP_MAP # print properties of PROP_MAP
             EXAMPLE=SimpleFrequencyDetector
             echo Property of $EXAMPLE= ${PROP_MAP[$EXAMPLE]}
+            echo Property of 50Hz= ${PROP_MAP[50Hz]}
+            EXAMPLE_NAME=50Hz
+            if [[ "${PROP_MAP[$EXAMPLE_NAME]}" != "" ]]; then
+              echo -n "with ${PROP_MAP[$EXAMPLE_NAME]} "
+            fi
           fi
         shell: bash {0} # Needed to avoid an exit at first error
 
@@ -234,7 +243,8 @@ jobs:
         run: |
           BUILD_PROPERTIES=${BUILD_PROPERTIES#\{} # remove "{"
           # if matrix.examples-build-properties are specified, create an associative shell array
-          if [[ $BUILD_PROPERTIES != "null" ]]; then declare -A PROP_MAP="( $(echo $BUILD_PROPERTIES | sed -E 's/"(\w*)": *([^,}]*)[,}]/\[\1\]=\2/g' ) )"; fi
+          # Because of a bug in bash if array is empty - PROP_MAP[50j] gives: value too great for base (error token is "50j") - we create a dummy array
+          if [[ $BUILD_PROPERTIES != "null" ]]; then declare -A PROP_MAP="( $(echo $BUILD_PROPERTIES | sed -E 's/"(\w*)": *([^,}]*)[,}]/\[\1\]=\2/g' ) )"; else declare -A PROP_MAP=( [dummy]=dummy ); fi
           echo -e "Compiling examples for board ${{ matrix.arduino-boards-fqbn }} \n"
           EXAMPLES=($(find . -name "*.ino"))
           for example in "${EXAMPLES[@]}"; do # Loop over all example directories
