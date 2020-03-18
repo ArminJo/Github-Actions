@@ -54,7 +54,6 @@ jobs:
 
         # Choose the right platform for the boards we want to test. (maybe in the future Arduino will automatically do this for you).
         # This works like this: when the fqbn is "arduino:avr:uno" the variable `platform` is set to "arduino:avr".
-        # Just take the first 2 token of the fqbn - this cannot be automatically done by GitHub workflow :-(
         #############################################################################################################
         include:
           - arduino-boards-fqbn: arduino:avr:uno
@@ -156,10 +155,10 @@ jobs:
           FQBN: ${{ matrix.arduino-boards-fqbn }}
         run: |
           arduino-cli core update-index
-          if [ "${{  matrix.platform }}" == "" ]; then echo -e ""$RED"ERROR: platform missing for board ${FQBN%|*}. Check your matrix.includes entries"; exit 1; fi
-          if [[ ${{  matrix.platform }} != *"arduino"* && ! -f ./arduino-cli.yaml ]]; then echo -e ""$RED"Non Arduino platform ${{  matrix.platform }} requested, but file arduino-cli.yaml is missing."; exit 1; fi
-          arduino-cli core install ${{ matrix.platform }} # for each job / board one platform is installed
-          if [ ${{  matrix.platform }} == "esp32:esp32" ]; then pip install pyserial; fi
+          remainder=${FQBN#*:}; PLATFORM=${FQBN%%:*}:${remainder%%:*}
+          if [[ ${{  matrix.platform }} != *"arduino"* && ! -f ./arduino-cli.yaml ]]; then echo -e ""$RED"Non Arduino platform ${PLATFORM} requested, but file arduino-cli.yaml is missing."; exit 1; fi
+          arduino-cli core install ${PLATFORM} # for each job / board one platform is installed
+          if [ "${PLATFORM}" == "esp32:esp32" ]; then pip install pyserial; fi
 
       - name: Install libraries
         run: if [[ "$REQUIRED_LIBRARIES" != "" ]]; then arduino-cli lib install ${{ env.REQUIRED_LIBRARIES }}; fi
@@ -172,7 +171,7 @@ jobs:
         run: |
           BUILD_PROPERTIES=${BUILD_PROPERTIES#\{} # remove "{"
           # if matrix.examples-build-properties are specified, create an associative shell array
-          if [[ $BUILD_PROPERTIES != "null" ]]; then declare -A PROP_MAP="( $(echo $BUILD_PROPERTIES | sed -E 's/"(\w*)": *([^,}]*)[,}]/\[\1\]=\2/g' ) )"; fi
+          if [[ $BUILD_PROPERTIES != "null" ]]; then declare -A PROP_MAP="( $(echo $BUILD_PROPERTIES | sed -E 's/"(\w*)": *([^,}]*)[,}]/\[\1\]=\2/g' ) )"; else declare -A PROP_MAP=( [dummy]=dummy ); fi
           echo -e "Compiling examples for board ${{ matrix.arduino-boards-fqbn }} \n"
           EXAMPLES=($(find . -name "*.ino"))
           for example in "${EXAMPLES[@]}"; do # Loop over all example directories

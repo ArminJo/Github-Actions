@@ -55,6 +55,7 @@ jobs:
         include:
           - arduino-boards-fqbn: digistump:avr:digispark-tiny1  # ATtiny85 board @1 MHz
             platform: digistump:avr
+            platform-url: http://digistump.com/package_digistump_index.json
             # examples-build-properties / aka setting compiler.cpp.extra_flags does not work for digistump:avr platform
             examples-exclude: WhistleSwitch "Test" # Space separated list of (unique substrings of) example names to exclude in build
 
@@ -218,11 +219,16 @@ jobs:
           FQBN: ${{ matrix.arduino-boards-fqbn }}
         run: |
           arduino-cli core update-index
-          if [ "${{  matrix.platform }}" == "" ]; then echo -e ""$RED"ERROR: platform missing for board ${FQBN%|*}. Check your matrix.includes entries"; exit 1; fi
-          if [[ ${{  matrix.platform }} != *"arduino"* && ! -f ./arduino-cli.yaml ]]; then echo -e ""$RED"Non Arduino platform ${{  matrix.platform }} requested, but file arduino-cli.yaml is missing."; exit 1; fi
-          arduino-cli core install ${{ matrix.platform }} # for each job / board one platform is installed
-          arduino-cli board listall
-          if [ ${{  matrix.platform }} == "esp32:esp32" ]; then pip install pyserial; fi
+          BRAND=${FQBN%%:*}
+          echo BRAND=${BRAND}
+          FAMILY=${REMAINDER%%:*}
+          echo FAMILY=${FAMILY}
+          REMAINDER=${FQBN#*:}; PLATFORM=${FQBN%%:*}:${REMAINDER%%:*}
+          echo PLATFORM=${PLATFORM}
+          if [[ ${PLATFORM} != *"arduino"* && ! -f ./arduino-cli.yaml ]]; then echo -e ""$RED"Non Arduino platform ${PLATFORM} requested, but file arduino-cli.yaml is missing."; exit 1; fi
+          arduino-cli core install ${PLATFORM} # for each job / board one platform is installed
+          arduino-cli board listall ${PLATFORM}
+          if [ "${PLATFORM}" == "esp32:esp32" ]; then pip install pyserial; fi
 
       - name: List installed boards with their FQBN
         run: |
