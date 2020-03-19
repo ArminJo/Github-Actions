@@ -1,7 +1,7 @@
-# Github actions script to test compilation of Arduino libraries
-Based on the **awesome [setup-arduino-cli](https://github.com/arduino/setup-arduino-cli) Action**.
+# Github workflow to compile all examples of an Arduino library and check for errors
+Inspired and partially using the [setup-arduino-cli](https://github.com/arduino/setup-arduino-cli) Action.
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://spdx.org/licenses/MIT.html)
 [![Actions Status Release](https://github.com/ArminJo/Github-Actions/workflows/LibraryBuild/badge.svg)](https://github.com/ArminJo/Github-Actions/actions)
 [![Actions Status Test](https://github.com/ArminJo/Github-Actions/workflows/test/badge.svg)](https://github.com/ArminJo/Github-Actions/actions)
 [![Hit Counter](https://hitcounter.pythonanywhere.com/count/tag.svg?url=https%3A%2F%2Fgithub.com%2FArminJo%2FGithub-Actions-Test)](https://github.com/brentvollebregt/hit-counter)
@@ -13,7 +13,7 @@ This repo contains 3 [scripts](https://github.com/ArminJo/Github-Actions/tree/ma
 - test.yml for internal testing.
 
 # Configuration options
-### If you want to build for other platforms than `arduino:avr:` do not forget to specify the `platform-url` parameter per board **or** include the `arduino-cli.yaml` file in your repository root and check if the required url is contained.
+### If you want to build for other platforms than `arduino:avr:` do not forget to specify the `platform-url` parameter per board **or** include an `arduino-cli.yaml` file in your repository root and check if the required url is contained.
 
 #### - **Libraries** required for your builds on a per build basis (which is sufficient) with [`REQUIRED_LIBRARIES:`](https://github.com/ArminJo/Github-Actions/blob/master/.github/workflows/LibraryBuild.yml.example#L25)<br/>
 Space separated list without double quotes around the list.<br/>
@@ -69,16 +69,6 @@ You may add a suffix behind the **fqbn** with "|" to specify one board for e.g. 
 # GitHub client integration
 To enable my smartgit client to commit to the `.github/workflow` directory without errors, I had to create a new [**Personal access token**](https://github.com/settings/tokens) with repo and **workflow rights** and import it in my client. See also [GitHub documentation for personal access token](https://help.github.com/en/github/authenticating-to-github/creating-a-personal-access-token-for-the-command-line).
 
-
-## Inputs of arduino-compile-examples Action
-
-### `cli-version`
-The version of `arduino-cli` to use. Default `"latest"`.
-### `libraries`
-### `fqbn`
-### `platform-url`
-### `examples-exclude`
-### `build-properties`
 
 ## Example usage
 

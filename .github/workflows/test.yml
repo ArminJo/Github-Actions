@@ -73,16 +73,15 @@ jobs:
 
           - arduino-boards-fqbn: arduino:avr:uno
             examples-exclude: 50Hz # Space separated list of (unique substrings of) example names to exclude in build
-            SimpleFrequencyDetector: -DDEBUG
-            WhistleSwitch: -DINFO
             examples-build-properties:
               WhistleSwitch:
                 -DDEBUG
+                -DFREQUENCY_RANGE_LOW
+              SimpleFrequencyDetector:
+                -DINFO
 
           - arduino-boards-fqbn: arduino:avr:uno|trace
             examples-exclude: 50Hz # Space separated list of (unique substrings of) example names to exclude in build
-            SimpleFrequencyDetector: -DTRACE
-            WhistleSwitch: -DTRACE
             examples-build-properties:
               WhistleSwitch:
                 -DDEBUG
@@ -116,29 +115,29 @@ jobs:
 
       # We use the `arduino/setup-arduino-cli` action to install and
       # configure the Arduino CLI on the system.
+      # This is an replacement for: "uses: arduino/setup-arduino-cli@v1.0.0"
       - name: Setup Arduino CLI
         run: |
           # if not already cached, download and install arduino IDE
           echo -n "arduino-cli "
-          if [ ! -f $HOME/arduino_ide/arduino ]; then
+          if [ -f $RUNNER_TOOL_CACHE/arduino_ide/arduino-cli ]; then
+            echo -e "cached: ""$GREEN""\xe2\x9c\x93"
+          else
             echo -n "downloading: "
             wget --quiet https://downloads.arduino.cc/arduino-cli/arduino-cli_${CLI_VERSION}_Linux_64bit.tar.gz
             if [ $? -ne 0 ]; then echo -e """$RED""\xe2\x9c\x96"; else echo -e """$GREEN""\xe2\x9c\x93"; fi
-            echo -n "Upacking arduino-cli to ${HOME}/arduino_ide:  "
-            [ ! -d $HOME/arduino_ide/ ] && mkdir $HOME/arduino_ide
-            tar xf arduino-cli_${CLI_VERSION}_Linux_64bit.tar.gz -C $HOME/arduino_ide/
+            echo -n "Upacking arduino-cli to ${RUNNER_TOOL_CACHE}/arduino_ide:  "
+            if [ ! -d $RUNNER_TOOL_CACHE/arduino_ide/ ]; then
+              mkdir $RUNNER_TOOL_CACHE/arduino_ide
+            fi
+            tar xf arduino-cli_${CLI_VERSION}_Linux_64bit.tar.gz -C $RUNNER_TOOL_CACHE/arduino_ide/
             if [ $? -ne 0 ]; then echo -e """$RED""\xe2\x9c\x96"; else echo -e """$GREEN""\xe2\x9c\x93"; fi
-            ls -l $HOME/arduino_ide/*
-            ls -l $HOME
-            touch $HOME/arduino_ide/$CLI_VERSION
-          else
-            echo -e "cached: ""$GREEN""\xe2\x9c\x93"
+            ls -l $RUNNER_TOOL_CACHE/arduino_ide/*
+            ls -l $RUNNER_TOOL_CACHE
           fi
-          echo "::add-path::${HOME}/arduino_ide" # add to path for next steps
-          
-          echo RUNNER_TOOL_CACHE=$RUNNER_TOOL_CACHE # /opt/hostedtoolcache
-          echo AGENT_TOOLSDIRECTORY=$AGENT_TOOLSDIRECTORY # /opt/hostedtoolcache
-          
+          $RUNNER_TOOL_CACHE/arduino_ide/arduino-cli version
+          echo "::add-path::${RUNNER_TOOL_CACHE}/arduino_ide" # add to path for next steps
+
       #- name: Cache Arduino packages
       # does not work, since we can not build separate caches for each platform
       #  id: arduino15-packages-env.MATRIX_PLATFORM <- This is a syntax error and this too: arduino15-packages-${PLATFORM}
@@ -157,21 +156,18 @@ jobs:
           echo HOME=$HOME # /home/runner
           ls -l $HOME
           echo PATH=$PATH
+          echo RUNNER_TOOL_CACHE=$RUNNER_TOOL_CACHE # /opt/hostedtoolcache
+          echo AGENT_TOOLSDIRECTORY=$AGENT_TOOLSDIRECTORY # /opt/hostedtoolcache
+          
           echo "matrix.examples-build-properties=${{ toJson(matrix.examples-build-properties) }}"
 
 
           echo -e "\n\nREQUIRED_LIBRARIES test\n"
           # here all quotes are escaped leading to have "Adafruit NeoPixel" or 'Adafruit NeoPixel' as 2 tokens each
+          # gives the same results when using REQUIRED_LIBRARIES_ENV
           echo \$REQUIRED_LIBRARIES=$REQUIRED_LIBRARIES
           echo REQUIRED_LIBRARIES array=
           for word in $REQUIRED_LIBRARIES; do
-            echo $word
-          done
-
-          # give the same results as with REQUIRED_LIBRARIES
-          echo \$REQUIRED_LIBRARIES_ENV=$REQUIRED_LIBRARIES_ENV
-          echo REQUIRED_LIBRARIES_ENV array=
-          for word in $REQUIRED_LIBRARIES_ENV; do
             echo $word
           done
 
@@ -179,26 +175,6 @@ jobs:
           echo env.REQUIRED_LIBRARIES=${{ env.REQUIRED_LIBRARIES }}
           echo REQUIRED_LIBRARIES_ENV array=
           for word in ${{ env.REQUIRED_LIBRARIES }} ; do
-            echo $word
-          done
-
-          echo -e "\n\nmatrix.examples-exclude test gives 3 different results\n"
-          # 2 lines (without any double quotes) WhistleSwitch + Test give for all 3 test the same results as one line WhistleSwitch Test!
-          # If we have a quoted entry at one line it is taken as one array element including the quotes
-
-          # 1 line WhistleSwitch Test (without double quotes) give WhistleSwitch Test as 2 token "WhistleSwitch and Test"
-          # 2 lines WhistleSwitch + "Test" give "WhistleSwitch \"Test\"" and 2 token "WhistleSwitch and \"Test\""
-          echo env \$EXAMPLES_EXCLUDE=$EXAMPLES_EXCLUDE # gives "WhistleSwitch Test" or "WhistleSwitch \"Test\""
-          echo env EXAMPLES_EXCLUDE array=
-          for word in $EXAMPLES_EXCLUDE; do
-            echo $word
-          done
-
-          # 1 line WhistleSwitch Test (without double quotes) give WhistleSwitch Test as 2 array elements WhistleSwitch and Test
-          EXCLUDE=${{ toJson(matrix.examples-exclude) }} # gives WhistleSwitch Test or WhistleSwitch "Test"
-          echo EXCLUDE=toJson...  =$EXCLUDE
-          echo EXCLUDE=toJson...  array=
-          for word in $EXCLUDE; do
             echo $word
           done
 
@@ -248,28 +224,28 @@ jobs:
         run: |
           mkdir -p $HOME/Arduino/libraries
           ln -s $PWD $HOME/Arduino/libraries/.
+          echo "List $HOME/Arduino/libraries/"
           ls -l $HOME/Arduino/libraries/
-          ls -l $HOME
+          ls -l $HOME/Arduino/libraries/*
 
       - name: Install platform from build matrix
         env: 
           FQBN: ${{ matrix.arduino-boards-fqbn }}
         run: |
           remainder=${FQBN#*:}; PLATFORM=${FQBN%%:*}:${remainder%%:*}
-          echo PLATFORM=${PLATFORM}
+          echo PLATFORM=$PLATFORM
           if [[ ${PLATFORM} != *"arduino"* && ! (-f ./arduino-cli.yaml || "${{ matrix.platform-url }}" != ""  ) ]]; then
-            echo -e "::error::Non Arduino platform ${PLATFORM} requested, but \"platform-url\" parameter and file arduino-cli.yaml are missing."; exit 1
+            echo -e "::error::Non Arduino platform $PLATFORM requested, but \"platform-url\" parameter and file arduino-cli.yaml are missing."; exit 1
           fi
           if [[ "${{ matrix.platform-url }}" != "" ]]; then
             arduino-cli core update-index --additional-urls "${{ matrix.platform-url }}" # must specify --additional-urls here
-            echo -e "arduino-cli core install ${PLATFORM} --additional-urls \"${{ matrix.platform-url }}\""
-            arduino-cli core install ${PLATFORM} --additional-urls "${{ matrix.platform-url }}" # for each job / board one platform is installed
+            echo -e "arduino-cli core install $PLATFORM --additional-urls \"${{ matrix.platform-url }}\""
+            arduino-cli core install $PLATFORM --additional-urls "${{ matrix.platform-url }}" # for each job / board one platform is installed
           else
             arduino-cli core update-index
-            echo "arduino-cli core install ${PLATFORM}"
-            arduino-cli core install ${PLATFORM} # for each job / board one platform is installed
+            echo "arduino-cli core install $PLATFORM"
+            arduino-cli core install $PLATFORM # for each job / board one platform is installed
           fi
-          arduino-cli board listall
           if [ "${PLATFORM}" == "esp32:esp32" ]; then pip install pyserial; fi
 
       - name: List installed boards with their FQBN

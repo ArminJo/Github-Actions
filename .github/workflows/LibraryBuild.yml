@@ -9,7 +9,14 @@
 
 # This is the name of the workflow, visible on GitHub UI.
 name: LibraryBuild
-on: [push, pull_request] # see: https://help.github.com/en/actions/reference/events-that-trigger-workflows#pull-request-event-pull_request
+on:  
+  push: # see: https://help.github.com/en/actions/reference/events-that-trigger-workflows#pull-request-event-pull_request
+    paths:
+    - '**.ino'
+    - '**.cpp'
+    - '**.h'
+    - '**LibraryBuild.yml'
+  pull_request:
 
 jobs:
   build:
@@ -85,39 +92,38 @@ jobs:
         env:
           FQBN: ${{ matrix.arduino-boards-fqbn }}
         run: |
+          arduino-cli version
+          # Compute platform value and check for platform-url parameter
           remainder=${FQBN#*:}; PLATFORM=${FQBN%%:*}:${remainder%%:*}
           if [[ ${PLATFORM} != *"arduino"* && ! (-f ./arduino-cli.yaml || "${{ matrix.platform-url }}" != ""  ) ]]; then
             echo "::error::Non Arduino platform ${PLATFORM} requested, but \"platform-url\" parameter and file arduino-cli.yaml are missing."; exit 1
           fi
           if [[ "${{ matrix.platform-url }}" != "" ]]; then
             arduino-cli core update-index --additional-urls "${{ matrix.platform-url }}"
+            echo -e "arduino-cli core install $PLATFORM --additional-urls \"${{ matrix.platform-url }}\""
             arduino-cli core install ${PLATFORM} --additional-urls "${{ matrix.platform-url }}" # for each job / board one platform is installed
           else
             arduino-cli core update-index
+            echo "arduino-cli core install $PLATFORM"
             arduino-cli core install ${PLATFORM} # for each job / board one platform is installed
           fi
-          arduino-cli board listall
           if [ ${PLATFORM} == "esp32:esp32" ]; then pip install pyserial; fi
 
       - name: List installed boards with their FQBN
         run: |
           arduino-cli board listall
-          # ls -l $HOME/.arduino15/packages/ # I see only arduino and one of the Attiny cores but not all 3 together
-          # echo -e HOME=\"$HOME\" # /home/runner
-          # echo PWD=$PWD # /home/runner/work/Github-Actions-Test/Github-Actions-Test
-          # which arduino-cli # /opt/hostedtoolcache/arduino-cli/0.9.0/x64/arduino-cli
 
       - name: Install libraries
         run: if [[ "$REQUIRED_LIBRARIES" != "" ]]; then arduino-cli lib install ${{ env.REQUIRED_LIBRARIES }}; fi
 
-      # Finally, we compile the sketch, using the FQBN that was set in the build matrix.
+      # Finally, we compile all examples, using all parameter given in the build matrix.
       - name: Compile all examples
         env:
           FQBN: ${{ matrix.arduino-boards-fqbn }}
           BUILD_PROPERTIES: ${{ toJson(matrix.examples-build-properties) }}
         run: |
+          # If matrix.examples-build-properties are specified, create an associative shell array
           BUILD_PROPERTIES=${BUILD_PROPERTIES#\{} # remove "{"
-          # if matrix.examples-build-properties are specified, create an associative shell array
           if [[ $BUILD_PROPERTIES != "null" ]]; then declare -A PROP_MAP="( $(echo $BUILD_PROPERTIES | sed -E 's/"(\w*)": *([^,}]*)[,}]/\[\1\]=\2/g' ) )"; else declare -A PROP_MAP=( [dummy]=dummy ); fi
           echo -e "Compiling examples for board ${{ matrix.arduino-boards-fqbn }} \n"
           EXAMPLES=($(find . -name "*.ino"))
