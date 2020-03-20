@@ -55,22 +55,12 @@ jobs:
           - digistump:avr:digispark-tiny1
           - ATTinyCore:avr:attinyx5:chip=85,clock=1internal
           - esp8266:esp8266:huzzah:eesz=4M3M,xtal=80
+          - esp32:esp32:featheresp32:FlashFreq=80
 
         # Specify parameters for each board.
         # Parameters can be: examples-exclude and examples-build-properties
         #############################################################################################################
         include:
-          - arduino-boards-fqbn: digistump:avr:digispark-tiny1  # ATtiny85 board @1 MHz
-            platform-url: http://digistump.com/package_digistump_index.json
-            # examples-build-properties / aka setting compiler.cpp.extra_flags does not work for digistump:avr platform
-            examples-exclude: WhistleSwitch "Test" # Space separated list of (unique substrings of) example names to exclude in build
-
-          - arduino-boards-fqbn: ATTinyCore:avr:attinyx5:chip=85,clock=1internal
-            platform-url: http://drazzy.com/package_drazzy.com_index.json
-            examples-build-properties:
-              WhistleSwitch:
-                -DFREQUENCY_RANGE_LOW
-
           - arduino-boards-fqbn: arduino:avr:uno
             examples-exclude: 50Hz # Space separated list of (unique substrings of) example names to exclude in build
             examples-build-properties:
@@ -80,17 +70,32 @@ jobs:
               SimpleFrequencyDetector:
                 -DINFO
 
-          - arduino-boards-fqbn: arduino:avr:uno|trace
+          - arduino-boards-fqbn: arduino:avr:uno|trace # UNO board with different build properties
             examples-exclude: 50Hz # Space separated list of (unique substrings of) example names to exclude in build
             examples-build-properties:
               WhistleSwitch:
                 -DDEBUG
                 -DTRACE
 
+          - arduino-boards-fqbn: digistump:avr:digispark-tiny1  # ATtiny85 board @1 MHz
+            platform-url: http://digistump.com/package_digistump_index.json
+            # examples-build-properties / aka setting compiler.cpp.extra_flags does not work for digistump:avr platform
+            examples-exclude: WhistleSwitch "Blink" # Space separated list of (unique substrings of) example names to exclude in build
+
+          - arduino-boards-fqbn: ATTinyCore:avr:attinyx5:chip=85,clock=1internal
+            platform-url: http://drazzy.com/package_drazzy.com_index.json
+            examples-build-properties:
+              WhistleSwitch:
+                -DFREQUENCY_RANGE_LOW
+
           - arduino-boards-fqbn: esp8266:esp8266:huzzah:eesz=4M3M,xtal=80
             platform-url: http://arduino.esp8266.com/stable/package_esp8266com_index.json
             examples-exclude: WhistleSwitch 50Hz SimpleFrequencyDetector
 
+          - arduino-boards-fqbn: esp32:esp32:featheresp32:FlashFreq=80
+            platform-url: https://dl.espressif.com/dl/package_esp32_index.json
+            examples-exclude: WhistleSwitch 50Hz SimpleFrequencyDetector
+            
 ######################################################
 # End of configuration, start of fixed script section
 ######################################################
@@ -161,7 +166,6 @@ jobs:
           
           echo "matrix.examples-build-properties=${{ toJson(matrix.examples-build-properties) }}"
 
-
           echo -e "\n\nREQUIRED_LIBRARIES test\n"
           # here all quotes are escaped leading to have "Adafruit NeoPixel" or 'Adafruit NeoPixel' as 2 tokens each
           # gives the same results when using REQUIRED_LIBRARIES_ENV
@@ -226,7 +230,6 @@ jobs:
           ln -s $PWD $HOME/Arduino/libraries/.
           echo "List $HOME/Arduino/libraries/"
           ls -l $HOME/Arduino/libraries/
-          ls -l $HOME/Arduino/libraries/*
 
       - name: Install platform from build matrix
         env: 
@@ -246,7 +249,17 @@ jobs:
             echo "arduino-cli core install $PLATFORM"
             arduino-cli core install $PLATFORM # for each job / board one platform is installed
           fi
-          if [ "${PLATFORM}" == "esp32:esp32" ]; then pip install pyserial; fi
+          
+          echo "which pip=$(which pip)" # /usr/bin/pip
+          echo "which python=$(which python)" # /usr/bin/python
+          
+          if [ "${PLATFORM}" == "esp8266:esp8266" ]; then
+            ls -lR /home/runner/.arduino15/packages/esp8266/tools/
+          fi
+          if [ "${PLATFORM}" == "esp32:esp32" ]; then
+            pip install pyserial
+          fi
+        shell: bash {0} # Needed to avoid an exit at first error
 
       - name: List installed boards with their FQBN
         run: |
@@ -282,12 +295,13 @@ jobs:
               if [[ "${PROP_MAP[$EXAMPLE_NAME]}" != "" ]]; then
                 echo -n "with ${PROP_MAP[$EXAMPLE_NAME]} "
               fi
-              build_stdout=$(arduino-cli compile --verbose --warnings all --fqbn ${FQBN%|*} --build-properties compiler.cpp.extra_flags="${PROP_MAP[$EXAMPLE_NAME]}" $(dirname $example) 2>&1);
+              #build_stdout=$(arduino-cli compile --verbose --warnings all --fqbn ${FQBN%|*} --build-properties compiler.cpp.extra_flags="${PROP_MAP[$EXAMPLE_NAME]}" $(dirname $example) 2>&1);
+              arduino-cli compile --verbose --warnings all --fqbn ${FQBN%|*} --build-properties compiler.cpp.extra_flags="${PROP_MAP[$EXAMPLE_NAME]}" $(dirname $example)
               if [ $? -ne 0 ]; then
                 echo -e ""$RED"\xe2\x9c\x96" # If ok output a green checkmark else a red X and the command output.
                 echo "::error::Compile of  $EXAMPLE_NAME ${PROP_MAP[$EXAMPLE_NAME]} failed"
                 exit_code=1
-                echo -e "$build_stdout \n"
+                #echo -e "$build_stdout \n"
               else
                 echo -e ""$GREEN"\xe2\x9c\x93"
               fi

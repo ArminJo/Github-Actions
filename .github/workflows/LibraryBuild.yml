@@ -60,13 +60,10 @@ jobs:
         include:
           - arduino-boards-fqbn: digistump:avr:digispark-tiny1  # ATtiny85 board @1 MHz
             platform-url: http://digistump.com/package_digistump_index.json
+            examples-exclude: Blink
 
           - arduino-boards-fqbn: ATTinyCore:avr:attinyx5:chip=85,clock=1internal
             platform-url: http://drazzy.com/package_drazzy.com_index.json
-
-######################################################
-# End of configuration, start of fixed script section
-######################################################
 
       # Do not cancel all jobs / architectures if one job fails
       fail-fast: false
@@ -77,6 +74,10 @@ jobs:
       # First of all, we clone the repo using the `checkout` action.
       - name: Checkout
         uses: actions/checkout@master
+
+##################################################################################################
+# This fixed script section can be replaced by the action ArminJo/arduino-test-compile@master
+##################################################################################################
 
       # We use the `arduino/setup-arduino-cli` action to install and
       # configure the Arduino CLI on the system.

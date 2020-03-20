@@ -1,4 +1,4 @@
-# Github workflow to compile all examples of an Arduino library and check for errors
+# Github workflow script to compile all examples of an Arduino library and check for errors
 Inspired and partially using the [setup-arduino-cli](https://github.com/arduino/setup-arduino-cli) Action.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://spdx.org/licenses/MIT.html)
@@ -6,11 +6,17 @@ Inspired and partially using the [setup-arduino-cli](https://github.com/arduino/
 [![Actions Status Test](https://github.com/ArminJo/Github-Actions/workflows/test/badge.svg)](https://github.com/ArminJo/Github-Actions/actions)
 [![Hit Counter](https://hitcounter.pythonanywhere.com/count/tag.svg?url=https%3A%2F%2Fgithub.com%2FArminJo%2FGithub-Actions-Test)](https://github.com/brentvollebregt/hit-counter)
 
-This GitHub Action / workflow script compiles all examples of an Arduino library for different boards.<br/>
-This repo contains 3 [scripts](https://github.com/ArminJo/Github-Actions/tree/master/.github/workflows).
+This GitHub workflow script compiles all examples of an Arduino library for different boards.<br/>
+Instead of using this workflow script you can use the [GitHub action ArminJo/arduino-test-compile@master](https://github.com/ArminJo/arduino-test-compile)<br/>
+The script is around **20 seconds faster** and more transparent, i.e. **you can modify it easily** to cover your requrements.<br/>
+
+This repo contains multiple [sample scripts](https://github.com/ArminJo/Github-Actions/tree/master/.github/workflows).
 - [LibraryBuild.yml](https://raw.githubusercontent.com/ArminJo/Github-Actions/master/.github/workflows/LibraryBuild.yml) to compile the examples included.
+- [LibraryBuildWithAction.yml](https://raw.githubusercontent.com/ArminJo/Github-Actions/master/.github/workflows/LibraryBuildWithAction.yml) is the same as `LibraryBuild.yml` but uses the [ArminJo/arduino-test-compile@master](https://github.com/ArminJo/arduino-test-compile) action instead.
+- [LibraryBuild.yml.example](https://raw.githubusercontent.com/ArminJo/Github-Actions/master/.github/workflows/LibraryBuild.yml.example) to show all configuration options for the script.
 - [LibraryBuild.yml.example](https://raw.githubusercontent.com/ArminJo/Github-Actions/master/.github/workflows/LibraryBuild.yml.example) to show all configuration options.
-- test.yml for internal testing.
+- test.yml for internal testing the script.
+- ActionTest for internal testing the arduino-test-compile action.
 
 # Configuration options
 ### If you want to build for other platforms than `arduino:avr:` do not forget to specify the `platform-url` parameter per board **or** include an `arduino-cli.yaml` file in your repository root and check if the required url is contained.
@@ -86,12 +92,18 @@ To enable my smartgit client to commit to the `.github/workflow` directory witho
 - LightweightServo [![Build Status](https://github.com/ArminJo/LightweightServo/workflows/LibraryBuild/badge.svg)](https://github.com/ArminJo/LightweightServo/actions)
 - QuadrupedControl [![Build Status](https://github.com/ArminJo/QuadrupedControl/workflows/LibraryBuild/badge.svg)](https://github.com/ArminJo/QuadrupedControl/actions)
 
+## Sketches
+- Simple-DSO [![Build Status](https://github.com/ArminJo/Arduino-Simple-DSO/workflows/TestCompile/badge.svg)](https://github.com/ArminJo/Arduino-Simple-DSO/actions)
+- RobotCar [![Build Status](https://github.com/ArminJo/Arduino-RobotCar/workflows/TestCompile/badge.svg)](https://github.com/ArminJo/Arduino-RobotCar/actions)
+- SBM-Info [![Build Status](https://github.com/ArminJo/Smart-Battery-Module-Info_For_Arduino/workflows/TestCompile/badge.svg)](https://github.com/ArminJo/Smart-Battery-Module-Info_For_Arduino/actions)
+
+
 ## Complex configuration
 - PlayRtttl [![Build Status](https://github.com/ArminJo/PlayRtttl/workflows/LibraryBuild/badge.svg)](https://github.com/ArminJo/PlayRtttl/actions)
 - ServoEasing [![Build Status](https://github.com/ArminJo/ServoEasing/workflows/LibraryBuild/badge.svg)](https://github.com/ArminJo/ServoEasing/actions)
 - NeoPatterns [![Build Status](https://github.com/ArminJo/NeoPatterns/workflows/LibraryBuild/badge.svg)](https://github.com/ArminJo/NeoPatterns/actions)
 
-<br/><br/>And here the background story, why this repository was created:
+<br/><br/>Here the background story, why this repository was created:
 
 From Thursday 27.2.2020 21:00 CET out of the blue my Travis-CI account suddenly showed me **"build has errored" on every new commit**.
 In the log file I could see *"Timeout waiting for network availability"*  the username was [redacted].
