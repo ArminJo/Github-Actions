@@ -8,7 +8,7 @@ Inspired and partially using the [setup-arduino-cli](https://github.com/arduino/
 
 This GitHub workflow script compiles all examples of an Arduino library for different boards.<br/>
 Instead of using this workflow script you can use the [GitHub action ArminJo/arduino-test-compile@master](https://github.com/ArminJo/arduino-test-compile)<br/>
-The script is around **20 seconds faster** and more transparent, i.e. **you can modify it easily** to cover your requrements.<br/>
+The script is around **20 seconds faster** and more transparent, i.e. **you can modify it easily** to cover your requirements.<br/>
 
 This repo contains multiple [sample scripts](https://github.com/ArminJo/Github-Actions/tree/master/.github/workflows).
 - [LibraryBuild.yml](https://raw.githubusercontent.com/ArminJo/Github-Actions/master/.github/workflows/LibraryBuild.yml) to compile the examples included.
@@ -33,15 +33,15 @@ REQUIRED_LIBRARIES: Servo "Adafruit NeoPixel"
 #### - **platform-url** for each board with e.g. [`platform-url:`] if there is no `arduino-cli.yaml` file containing the URL in your repository root.
 Sample URL's are:
 - http://drazzy.com/package_drazzy.com_index.json
-- http://digistump.com/package_digistump_index.json
-- http://arduino.esp8266.com/stable/package_esp8266com_index.json
+- http://digistump.com/package_digistump_index.json # https gives: x509: certificate signed by unknown authority
+- https://arduino.esp8266.com/stable/package_esp8266com_index.json
 - https://dl.espressif.com/dl/package_esp32_index.json
 - https://github.com/stm32duino/BoardManagerFiles/raw/dev/STM32/package_stm_index.json
 - https://raw.githubusercontent.com/sparkfun/Arduino_Boards/master/IDE_Board_Manager/package_sparkfun_index.json
 - https://files.pololu.com/arduino/package_pololu_index.json
 
 ```yaml
-platform-url: http://arduino.esp8266.com/stable/package_esp8266com_index.json
+platform-url: https://arduino.esp8266.com/stable/package_esp8266com_index.json
 ```
 
 #### - **Build parameter** like `-DDEBUG` for each board/example combination with [`examples-build-properties:`](https://github.com/ArminJo/Github-Actions/blob/master/.github/workflows/LibraryBuild.yml.example#L62).

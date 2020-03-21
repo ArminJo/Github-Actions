@@ -24,12 +24,6 @@ jobs:
 
     runs-on: ubuntu-latest # I picked Ubuntu to use shell scripts.
 
-    env:
-      # Space separated list without double quotes around the list. 
-      # If you need a library with a space in its name, like Adafruit NeoPixel or Adafruit INA219, you must use double quotes
-      # around the name and have at least 2 entries, where the first must be without double quotes! You may use Servo as dummy entry.
-      REQUIRED_LIBRARIES:
-
     strategy:
       matrix:
         # The matrix will produce one job for each configuration parameter of type `arduino-boards-fqbn`
@@ -59,17 +53,10 @@ jobs:
           - arduino-boards-fqbn: ATTinyCore:avr:attinyx5:chip=85,clock=1internal
             platform-url: http://drazzy.com/package_drazzy.com_index.json
 
-######################################################
-# End of configuration, start of fixed script section
-######################################################
-
       # Do not cancel all jobs / architectures if one job fails
       fail-fast: false
 
-    # This is the list of steps this job will run.
     steps:
-
-      # First of all, we clone the repo using the `checkout` action.
       - name: Checkout
         uses: actions/checkout@master
 

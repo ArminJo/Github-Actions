@@ -89,7 +89,7 @@ jobs:
                 -DFREQUENCY_RANGE_LOW
 
           - arduino-boards-fqbn: esp8266:esp8266:huzzah:eesz=4M3M,xtal=80
-            platform-url: http://arduino.esp8266.com/stable/package_esp8266com_index.json
+            platform-url: https://arduino.esp8266.com/stable/package_esp8266com_index.json
             examples-exclude: WhistleSwitch 50Hz SimpleFrequencyDetector
 
           - arduino-boards-fqbn: esp32:esp32:featheresp32:FlashFreq=80
@@ -250,8 +250,8 @@ jobs:
             arduino-cli core install $PLATFORM # for each job / board one platform is installed
           fi
           
-          echo "which pip=$(which pip)" # /usr/bin/pip
-          echo "which python=$(which python)" # /usr/bin/python
+          #echo "which pip=$(which pip)" # /usr/bin/pip
+          #echo "which python=$(which python)" # /usr/bin/python
           
           if [ "${PLATFORM}" == "esp8266:esp8266" ]; then
             ls -lR /home/runner/.arduino15/packages/esp8266/tools/
@@ -270,7 +270,10 @@ jobs:
           # which arduino-cli # /opt/hostedtoolcache/arduino-cli/0.9.0/x64/arduino-cli
 
       - name: Install libraries
-        run: if [[ "$REQUIRED_LIBRARIES" != "" ]]; then arduino-cli lib install ${{ env.REQUIRED_LIBRARIES }}; fi
+        run: |
+          if [[ "$REQUIRED_LIBRARIES" != "" ]]; then
+            arduino-cli lib install ${{ env.REQUIRED_LIBRARIES }}
+          fi
 
       # Finally, we compile the sketch, using the FQBN that was set in the build matrix.
       - name: Compile all examples
