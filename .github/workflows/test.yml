@@ -25,10 +25,8 @@ jobs:
     runs-on: ubuntu-latest # I picked Ubuntu to use shell scripts.
 
     env:
-      # Space separated list without double quotes around the list. 
-      # If you need a library with a space in its name, like Adafruit NeoPixel or Adafruit INA219, you must use double quotes
-      # around the name and have at least 2 entries, where the first must be without double quotes! You may use Servo as dummy entry.
-      REQUIRED_LIBRARIES: Servo "Adafruit NeoPixel"
+      # Comma separated list without double quotes around the list. 
+      REQUIRED_LIBRARIES: Adafruit NeoPixel,Servo
       CLI_VERSION: latest
       
       # Global color definitions for output colors
@@ -62,7 +60,7 @@ jobs:
         #############################################################################################################
         include:
           - arduino-boards-fqbn: arduino:avr:uno
-            examples-exclude: 50Hz # Space separated list of (unique substrings of) example names to exclude in build
+            examples-exclude: 50Hz # Comma separated list of (unique substrings of) example names to exclude in build
             examples-build-properties:
               WhistleSwitch:
                 -DDEBUG
@@ -71,7 +69,7 @@ jobs:
                 -DINFO
 
           - arduino-boards-fqbn: arduino:avr:uno|trace # UNO board with different build properties
-            examples-exclude: 50Hz # Space separated list of (unique substrings of) example names to exclude in build
+            examples-exclude: 50Hz # Comma separated list of (unique substrings of) example names to exclude in build
             examples-build-properties:
               WhistleSwitch:
                 -DDEBUG
@@ -80,7 +78,7 @@ jobs:
           - arduino-boards-fqbn: digistump:avr:digispark-tiny1  # ATtiny85 board @1 MHz
             platform-url: http://digistump.com/package_digistump_index.json
             # examples-build-properties / aka setting compiler.cpp.extra_flags does not work for digistump:avr platform
-            examples-exclude: WhistleSwitch "Blink" # Space separated list of (unique substrings of) example names to exclude in build
+            examples-exclude: WhistleSwitch,"Blink" # Comma separated list of (unique substrings of) example names to exclude in build
 
           - arduino-boards-fqbn: ATTinyCore:avr:attinyx5:chip=85,clock=1internal
             platform-url: http://drazzy.com/package_drazzy.com_index.json
@@ -90,11 +88,11 @@ jobs:
 
           - arduino-boards-fqbn: esp8266:esp8266:huzzah:eesz=4M3M,xtal=80
             platform-url: https://arduino.esp8266.com/stable/package_esp8266com_index.json
-            examples-exclude: WhistleSwitch 50Hz SimpleFrequencyDetector
+            examples-exclude: WhistleSwitch,50Hz SimpleFrequencyDetector
 
           - arduino-boards-fqbn: esp32:esp32:featheresp32:FlashFreq=80
             platform-url: https://dl.espressif.com/dl/package_esp32_index.json
-            examples-exclude: WhistleSwitch 50Hz SimpleFrequencyDetector
+            examples-exclude: WhistleSwitch 50Hz,SimpleFrequencyDetector
             
 ######################################################
 # End of configuration, start of fixed script section
@@ -125,18 +123,18 @@ jobs:
         run: |
           # if not already cached, download and install arduino IDE
           echo -n "arduino-cli "
-          if [ -f $RUNNER_TOOL_CACHE/arduino_ide/arduino-cli ]; then
+          if [[ -f $RUNNER_TOOL_CACHE/arduino_ide/arduino-cli ]]; then
             echo -e "cached: ""$GREEN""\xe2\x9c\x93"
           else
             echo -n "downloading: "
             wget --quiet https://downloads.arduino.cc/arduino-cli/arduino-cli_${CLI_VERSION}_Linux_64bit.tar.gz
-            if [ $? -ne 0 ]; then echo -e """$RED""\xe2\x9c\x96"; else echo -e """$GREEN""\xe2\x9c\x93"; fi
+            if [[ $? -ne 0 ]]; then echo -e """$RED""\xe2\x9c\x96"; else echo -e """$GREEN""\xe2\x9c\x93"; fi
             echo -n "Upacking arduino-cli to ${RUNNER_TOOL_CACHE}/arduino_ide:  "
-            if [ ! -d $RUNNER_TOOL_CACHE/arduino_ide/ ]; then
+            if [[ ! -d $RUNNER_TOOL_CACHE/arduino_ide/ ]]; then
               mkdir $RUNNER_TOOL_CACHE/arduino_ide
             fi
             tar xf arduino-cli_${CLI_VERSION}_Linux_64bit.tar.gz -C $RUNNER_TOOL_CACHE/arduino_ide/
-            if [ $? -ne 0 ]; then echo -e """$RED""\xe2\x9c\x96"; else echo -e """$GREEN""\xe2\x9c\x93"; fi
+            if [[ $? -ne 0 ]]; then echo -e """$RED""\xe2\x9c\x96"; else echo -e """$GREEN""\xe2\x9c\x93"; fi
             ls -l $RUNNER_TOOL_CACHE/arduino_ide/*
             ls -l $RUNNER_TOOL_CACHE
           fi
@@ -210,7 +208,7 @@ jobs:
             echo Property of 50Hz= ${PROP_MAP[50Hz]} # This works and gives "" since PROP_MAP is not empty
             # echo Property of 50Hz= ${P_M[50Hz]} # This gives error: value too great for base (error token is "50Hz")
             EXAMPLE_NAME=50Hz
-            if [[ "${PROP_MAP[$EXAMPLE_NAME]}" != "" ]]; then
+            if [[ -n ${PROP_MAP[$EXAMPLE_NAME]} ]]; then
               echo -n "with ${PROP_MAP[$EXAMPLE_NAME]} "
             fi
           fi
@@ -237,10 +235,10 @@ jobs:
         run: |
           remainder=${FQBN#*:}; PLATFORM=${FQBN%%:*}:${remainder%%:*}
           echo PLATFORM=$PLATFORM
-          if [[ ${PLATFORM} != *"arduino"* && ! (-f ./arduino-cli.yaml || "${{ matrix.platform-url }}" != ""  ) ]]; then
+          if [[ $PLATFORM != *arduino* && ! (-f ./arduino-cli.yaml || -n "${{ matrix.platform-url }}" ) ]]; then
             echo -e "::error::Non Arduino platform $PLATFORM requested, but \"platform-url\" parameter and file arduino-cli.yaml are missing."; exit 1
           fi
-          if [[ "${{ matrix.platform-url }}" != "" ]]; then
+          if [[ -n "${{ matrix.platform-url }}" ]]; then
             arduino-cli core update-index --additional-urls "${{ matrix.platform-url }}" # must specify --additional-urls here
             echo -e "arduino-cli core install $PLATFORM --additional-urls \"${{ matrix.platform-url }}\""
             arduino-cli core install $PLATFORM --additional-urls "${{ matrix.platform-url }}" # for each job / board one platform is installed
@@ -253,10 +251,10 @@ jobs:
           #echo "which pip=$(which pip)" # /usr/bin/pip
           #echo "which python=$(which python)" # /usr/bin/python
           
-          if [ "${PLATFORM}" == "esp8266:esp8266" ]; then
+          if [[ $PLATFORM == esp8266:esp8266 ]]; then
             ls -lR /home/runner/.arduino15/packages/esp8266/tools/
           fi
-          if [ "${PLATFORM}" == "esp32:esp32" ]; then
+          if [[ $PLATFORM == esp32:esp32 ]]; then
             pip install pyserial
           fi
         shell: bash {0} # Needed to avoid an exit at first error
@@ -271,8 +269,25 @@ jobs:
 
       - name: Install libraries
         run: |
-          if [[ "$REQUIRED_LIBRARIES" != "" ]]; then
-            arduino-cli lib install ${{ env.REQUIRED_LIBRARIES }}
+          if [[ -z $REQUIRED_LIBRARIES ]]; then
+            echo "No additional libraries to install"
+          else
+            echo "Install libraries $REQUIRED_LIBRARIES"
+            #if [[ $REQUIRED_LIBRARIES == *,* ]]; then
+              # Support comma separated library list
+              echo "IFS=$IFS"
+              BACKUP_IFS="$IFS"
+              IFS=$','
+              # Support comma separated library list
+              declare -a REQUIRED_LIBRARIES_ARRAY=( $REQUIRED_LIBRARIES )
+              IFS="$BACKUP_IFS"            
+            #else
+              # Support library names which contain whitespace
+              #declare -a REQUIRED_LIBRARIES_ARRAY="( $REQUIRED_LIBRARIES )"
+            #fi
+            declare -p REQUIRED_LIBRARIES_ARRAY # print properties of REQUIRED_LIBRARIES_ARRAY
+            echo "Install libraries list ${REQUIRED_LIBRARIES_ARRAY[@]}"
+            arduino-cli lib install "${REQUIRED_LIBRARIES_ARRAY[@]}"
           fi
 
       # Finally, we compile the sketch, using the FQBN that was set in the build matrix.
@@ -284,7 +299,7 @@ jobs:
           BUILD_PROPERTIES=${BUILD_PROPERTIES#\{} # remove "{"
           # if matrix.examples-build-properties are specified, create an associative shell array
           # Because of a bug in bash if array is empty - PROP_MAP[50j] gives: value too great for base (error token is "50j") - we create a dummy array
-          if [[ $BUILD_PROPERTIES != "null" ]]; then declare -A PROP_MAP="( $(echo $BUILD_PROPERTIES | sed -E 's/"(\w*)": *([^,}]*)[,}]/\[\1\]=\2/g' ) )"; else declare -A PROP_MAP=( [dummy]=dummy ); fi
+          if [[ $BUILD_PROPERTIES != null ]]; then declare -A PROP_MAP="( $(echo $BUILD_PROPERTIES | sed -E 's/"(\w*)": *([^,}]*)[,}]/\[\1\]=\2/g' ) )"; else declare -A PROP_MAP=( [dummy]=dummy ); fi
           echo -e "Compiling examples for board ${{ matrix.arduino-boards-fqbn }} \n"
           EXAMPLES=($(find . -name "*.ino"))
           for example in "${EXAMPLES[@]}"; do # Loop over all example directories
@@ -295,12 +310,12 @@ jobs:
               # check if there is an entry in the associative array and create a compile parameter
               echo "arduino-cli compile --verbose --warnings all --fqbn ${FQBN%|*} --build-properties compiler.cpp.extra_flags=\"${PROP_MAP[$EXAMPLE_NAME]}\" $(dirname $example)"
               echo -n "Compiling $EXAMPLE_NAME "
-              if [[ "${PROP_MAP[$EXAMPLE_NAME]}" != "" ]]; then
+              if [[ -n ${PROP_MAP[$EXAMPLE_NAME]} ]]; then
                 echo -n "with ${PROP_MAP[$EXAMPLE_NAME]} "
               fi
               #build_stdout=$(arduino-cli compile --verbose --warnings all --fqbn ${FQBN%|*} --build-properties compiler.cpp.extra_flags="${PROP_MAP[$EXAMPLE_NAME]}" $(dirname $example) 2>&1);
               arduino-cli compile --verbose --warnings all --fqbn ${FQBN%|*} --build-properties compiler.cpp.extra_flags="${PROP_MAP[$EXAMPLE_NAME]}" $(dirname $example)
-              if [ $? -ne 0 ]; then
+              if [[ $? -ne 0 ]]; then
                 echo -e ""$RED"\xe2\x9c\x96" # If ok output a green checkmark else a red X and the command output.
                 echo "::error::Compile of  $EXAMPLE_NAME ${PROP_MAP[$EXAMPLE_NAME]} failed"
                 exit_code=1
