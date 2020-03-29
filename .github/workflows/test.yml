@@ -26,7 +26,7 @@ jobs:
 
     env:
       # Comma separated list without double quotes around the list. 
-      REQUIRED_LIBRARIES: Adafruit NeoPixel,Servo
+      REQUIRED_LIBRARIES: Adafruit NeoPixel,ATtinySerialOut
       CLI_VERSION: latest
       
       # Global color definitions for output colors
