@@ -1,4 +1,4 @@
-# LibraryBuild.yml
+# LibraryBuildWithSteps.yml
 # Github workflow script to test compile all examples of an Arduino library repository.
 #
 # Copyright (C) 2020  Armin Joachimsmeyer
@@ -8,14 +8,14 @@
 # I had to create a new personal token with workflow enabled at https://github.com/settings/tokens
 
 # This is the name of the workflow, visible on GitHub UI.
-name: LibraryBuild
+name: LibraryBuildWithSteps
 on:  
   push: # see: https://help.github.com/en/actions/reference/events-that-trigger-workflows#pull-request-event-pull_request
     paths:
     - '**.ino'
     - '**.cpp'
     - '**.h'
-    - '**LibraryBuild.yml'
+    - '**LibraryBuildWithSteps.yml'
   pull_request:
 
 jobs:
@@ -26,7 +26,7 @@ jobs:
 
     env:
       # Comma separated list without double quotes around the list. 
-      REQUIRED_LIBRARIES:
+      REQUIRED_LIBRARIES: ATtinySerialOut
 
       # Global color definitions for output colors
       RED: '\033[0;31m'

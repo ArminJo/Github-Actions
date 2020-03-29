@@ -1,4 +1,4 @@
-# LibraryBuildWithAction.yml
+# LibraryBuildWithScript.yml
 # Github workflow script to test compile all examples of an Arduino library repository.
 #
 # Copyright (C) 2020  Armin Joachimsmeyer
@@ -8,14 +8,14 @@
 # I had to create a new personal token with workflow enabled at https://github.com/settings/tokens
 
 # This is the name of the workflow, visible on GitHub UI.
-name: LibraryBuildWithAction
+name: LibraryBuildWithScript
 on:  
   push: # see: https://help.github.com/en/actions/reference/events-that-trigger-workflows#pull-request-event-pull_request
     paths:
     - '**.ino'
     - '**.cpp'
     - '**.h'
-    - '**LibraryBuildWithAction.yml'
+    - '**LibraryBuildWithScript.yml'
   pull_request:
 
 jobs:
@@ -63,12 +63,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@master
 
-      - name: Compile all examples
-        uses: ArminJo/arduino-test-compile@master
-        with:
-          arduino-board-fqbn: ${{ matrix.arduino-boards-fqbn }}
-          required-libraries: ${{ env.REQUIRED_LIBRARIES }}
-          platform-url: ${{ matrix.platform-url }}
-          examples-exclude: ${{ matrix.examples-exclude }}
-          examples-build-properties: "{ \"WhistleSwitch\": \"-DDEBUG -DFREQUENCY_RANGE_LOW\", \"SimpleFrequencyDetector\": \"-DINFO\" }"
+      # Test of the arduino-test-compile script
+      - name: Compile all examples using the bash script arduino-test-compile.sh
+        env:
+          # Passing parameters to the script by setting the appropriate ENV_* variables.
+          ENV_ARDUINO_BOARD_FQBN: ${{ matrix.arduino-boards-fqbn }}
+          ENV_PLATFORM_URL: ${{ matrix.platform-url }}
+          ENV_REQUIRED_LIBRARIES: ${{ env.REQUIRED_LIBRARIES }}
+          ENV_EXAMPLES_EXCLUDE: ${{ matrix.examples-exclude }}
+          ENV_EXAMPLES_BUILD_PROPERTIES: ${{ toJson(matrix.examples-build-properties) }}
+        run: |
+          wget --quiet https://raw.githubusercontent.com/ArminJo/arduino-test-compile/master/arduino-test-compile.sh
+            ls -l arduino-test-compile.sh
+            chmod +x arduino-test-compile.sh
+            ./arduino-test-compile.sh
           

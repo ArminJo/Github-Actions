@@ -134,7 +134,7 @@
 #  endif
 
 #  if defined(INFO)
-#include "ATtinySerialOut.h"
+#include "ATtinySerialOut.h" // Available as Arduino library and contained in WhistleSwitch example.
 #  endif
 
 #else
