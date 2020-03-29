@@ -273,18 +273,12 @@ jobs:
             echo "No additional libraries to install"
           else
             echo "Install libraries $REQUIRED_LIBRARIES"
-            #if [[ $REQUIRED_LIBRARIES == *,* ]]; then
-              # Support comma separated library list
-              echo "IFS=$IFS"
-              BACKUP_IFS="$IFS"
-              IFS=$','
-              # Support comma separated library list
-              declare -a REQUIRED_LIBRARIES_ARRAY=( $REQUIRED_LIBRARIES )
-              IFS="$BACKUP_IFS"            
-            #else
-              # Support library names which contain whitespace
-              #declare -a REQUIRED_LIBRARIES_ARRAY="( $REQUIRED_LIBRARIES )"
-            #fi
+            # Support comma separated library list
+            echo "IFS=$IFS"
+            BACKUP_IFS="$IFS"
+            IFS=$','
+            declare -a REQUIRED_LIBRARIES_ARRAY=( $REQUIRED_LIBRARIES )
+            IFS="$BACKUP_IFS"            
             declare -p REQUIRED_LIBRARIES_ARRAY # print properties of REQUIRED_LIBRARIES_ARRAY
             echo "Install libraries list ${REQUIRED_LIBRARIES_ARRAY[@]}"
             arduino-cli lib install "${REQUIRED_LIBRARIES_ARRAY[@]}"
