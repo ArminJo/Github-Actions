@@ -73,5 +73,6 @@ jobs:
           examples-build-properties: '{ "WhistleSwitch": "-DDEBUG -DFREQUENCY_RANGE_LOW", "SimpleFrequencyDetector": "-DINFO" }'
           sketch-names:
             WhistleSwitch.ino,
+            50Hz.ino,
             SimpleFrequencyDetector.ino
           
