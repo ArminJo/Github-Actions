@@ -1,4 +1,4 @@
-# Github workflow test script for development and testing the [arduino-test-compile](https://github.com/ArminJo/arduino-test-compile) action and bash script
+# Github workflow test script for development and testing the [arduino-test-compile](https://github.com/marketplace/actions/test-compile-for-arduino) action and bash script
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://spdx.org/licenses/MIT.html)
 [![Build Status](https://github.com/ArminJo/Github-Actions/workflows/LibraryBuildWithSteps/badge.svg)](https://github.com/ArminJo/Github-Actions/actions)
