@@ -43,9 +43,9 @@
 
 #include "FrequencyDetector.h"
 
-//#define INFO
-//#define DEBUG
 //#define TRACE
+//#define DEBUG
+//#define INFO
 #include "DebugLevel.h" // to propagate debug levels
 
 #if (defined(INFO) || defined(DEBUG) || defined(TRACE)) && (defined(__AVR_ATtiny25__) || defined(__AVR_ATtiny45__) || defined(__AVR_ATtiny85__))
@@ -69,7 +69,8 @@ union Myword {
         uint8_t LowByte;
         uint8_t HighByte;
     } byte;
-    uint16_t Word;
+    uint16_t UWord;
+    int16_t Word;
     uint8_t * BytePointer;
 };
 
@@ -252,12 +253,12 @@ uint16_t readSignal() {
          */
         if (tTriggerSearchStart) {
             // rising slope - wait for value below 1. threshold
-            if (tUValue.Word < FrequencyDetectorControl.TriggerLevelLower) {
+            if (tUValue.UWord < FrequencyDetectorControl.TriggerLevelLower) {
                 tTriggerSearchStart = false;
             }
         } else {
             // rising slope - wait for value to rise above 2. threshold
-            if (tUValue.Word > FrequencyDetectorControl.TriggerLevel) {
+            if (tUValue.UWord > FrequencyDetectorControl.TriggerLevel) {
                 //Trigger found but skip first (incomplete period)
                 if (tSignalTriggerFound) {
                     FrequencyDetectorControl.PeriodLength[tPeriodCount] = i - tPeriodCountPosition;
@@ -275,13 +276,13 @@ uint16_t readSignal() {
         }
 
         // Get average for external statistics
-        tSumOfSampleValues += tUValue.Word;
+        tSumOfSampleValues += tUValue.UWord;
 
         // get max and min for automatic triggering
-        if (tUValue.Word > tValueMax) {
-            tValueMax = tUValue.Word;
-        } else if (tUValue.Word < tValueMin) {
-            tValueMin = tUValue.Word;
+        if (tUValue.UWord > tValueMax) {
+            tValueMax = tUValue.UWord;
+        } else if (tUValue.UWord < tValueMin) {
+            tValueMin = tUValue.UWord;
         }
     }
 
