@@ -116,11 +116,16 @@ jobs:
           #echo matrix=$matrix   # empty
           #echo matrix=${{ matrix }} #=Object The string "Object"
           #########################################
+          # PWD = GITHUB_WORKSPACE=/home/runner/work/Github-Actions/Github-Actions
+          # HOME=/home/runner
+          # RUNNER_TEMP=/home/runner/work/_temp
+          # RUNNER_TOOL_CACHE=/opt/hostedtoolcache
+          # RUNNER_WORKSPACE=/home/runner/work/Github-Actions
 
       # First of all, we clone the repo using the `checkout` action.
       - name: Checkout
         uses: actions/checkout@master
-
+                
       # We use the `arduino/setup-arduino-cli` action to install and
       # configure the Arduino CLI on the system.
       # This is an replacement for: "uses: arduino/setup-arduino-cli@v1.0.0"
@@ -163,6 +168,8 @@ jobs:
           ls -l $PWD
           echo HOME=$HOME # /home/runner
           ls -l $HOME
+          echo GITHUB_WORKSPACE=$GITHUB_WORKSPACE # /home/runner/work/Github-Actions/Github-Actions
+          ls -l $GITHUB_WORKSPACE
           echo PATH=$PATH
           echo RUNNER_TOOL_CACHE=$RUNNER_TOOL_CACHE # /opt/hostedtoolcache
           echo AGENT_TOOLSDIRECTORY=$AGENT_TOOLSDIRECTORY # /opt/hostedtoolcache

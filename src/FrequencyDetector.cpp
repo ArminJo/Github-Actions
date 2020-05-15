@@ -87,7 +87,7 @@ union Myword {
  ***************************************************************/
 /*
  * aADCChannel can be 0 to 7 or A0 to A7
- * aADCReference can be DEFAULT (VCC) or INTERNAL (1.1 volt)
+ * aADCReference can be DEFAULT (VCC) or INTERNAL (1.1 volt) !! use the definitions
  * aADCPrescalerValue can be one of PRESCALE4, PRESCALE8, PRESCALE32, PRESCALE64 or PRESCALE128
  * aFrequencyOfOneSampleTimes100 depends on value of aADCPrescalerValue
  * Formula is
@@ -206,18 +206,7 @@ uint16_t readSignal() {
     /*
      * disable Timer0 (millis()) overflow interrupt
      */
-#if defined(ARDUINO_AVR_DIGISPARK)
-    // Digispark uses timer1 for millis()
-    cbi(TIMSK, TOIE1);
-#else
-#  if defined(TIMSK) && defined(TOIE0)
-    cbi(TIMSK, TOIE0);
-#  elif defined(TIMSK0) && defined(TOIE0)
-    cbi(TIMSK0, TOIE0);
-#  else
-#error  Timer 0 overflow interrupt not disabled correctly
-#  endif
-#endif // defined(ARDUINO_AVR_DIGISPARK)
+    disableMillisInterrupt();
 
 //  ADCSRB = 0; // free running mode  - is default
     ADCSRA = ((1 << ADEN) | (1 << ADSC) | (1 << ADATE) | (1 << ADIF) | FrequencyDetectorControl.ADCPrescalerValue);
@@ -259,7 +248,7 @@ uint16_t readSignal() {
         } else {
             // rising slope - wait for value to rise above 2. threshold
             if (tUValue.UWord > FrequencyDetectorControl.TriggerLevel) {
-                //Trigger found but skip first (incomplete period)
+                // Trigger found but skip first (incomplete period)
                 if (tSignalTriggerFound) {
                     FrequencyDetectorControl.PeriodLength[tPeriodCount] = i - tPeriodCountPosition;
                     if (tPeriodCount < (sizeof(FrequencyDetectorControl.PeriodLength) - 1)) {
@@ -294,38 +283,15 @@ uint16_t readSignal() {
 
     uint16_t tDelta = tValueMax - tValueMin;
     FrequencyDetectorControl.SignalDelta = tDelta;
-    // middle between min and max
+    // Take middle between min and max
     uint16_t tTriggerValue = tValueMin + (tDelta / 2);
     FrequencyDetectorControl.TriggerLevel = tTriggerValue;
 
     /*
-     * Enable timer 0 overflow interrupt and compensate for disabled timer, if still disabled.
+     * Enable millis timer (0|1) overflow interrupt and compensate for disabled timer, if still disabled.
      * We need 625 microseconds for other computations @1MHz.
      */
-#if defined(ARDUINO_AVR_DIGISPARK)
-    // Digispark uses timer1 for millis()
-    if ((TIMSK & _BV(TOIE1)) == 0) {
-        // still disabled -> compensate
-        timer0_millis += FrequencyDetectorControl.PeriodOfOneReadingMillis;
-    }
-    sbi(TIMSK, TOIE1);
-#else // defined(ARDUINO_AVR_DIGISPARK)
-#  if defined(TIMSK) && defined(TOIE0)
-    if ((TIMSK & _BV(TOIE0)) == 0) {
-        // still disabled -> compensate
-        timer0_millis += FrequencyDetectorControl.PeriodOfOneReadingMillis;
-    }
-    sbi(TIMSK, TOIE0);
-#  elif defined(TIMSK0) && defined(TOIE0)
-    if ((TIMSK0 & _BV(TOIE0)) == 0) {
-        // still disabled -> compensate
-        timer0_millis += FrequencyDetectorControl.PeriodOfOneReadingMillis;
-    }
-    sbi(TIMSK0, TOIE0);
-#  else
-#error  Timer 0 overflow interrupt not enabled correctly
-#  endif
-#endif // defined(ARDUINO_AVR_DIGISPARK)
+    enableMillisInterrupt(FrequencyDetectorControl.PeriodOfOneReadingMillis);
 
     /*
      * check for signal strength
@@ -520,6 +486,13 @@ void computeDirectAndFilteredMatch(uint16_t aFrequency) {
             }
         }
     }
+}
+
+void printTriggerValues(Print * aSerial){
+    aSerial->print(F("TriggerLower="));
+    aSerial->print(FrequencyDetectorControl.TriggerLevelLower);
+    aSerial->print(" Upper=");
+    aSerial->println(FrequencyDetectorControl.TriggerLevel);
 }
 
 void printLegendForArduinoPlotter(Print * aSerial) {

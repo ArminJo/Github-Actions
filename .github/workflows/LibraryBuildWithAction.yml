@@ -63,6 +63,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@master
 
+      - name: Checkout custom library
+        uses: actions/checkout@v2
+        with:
+          repository: ArminJo/ATtinySerialOut
+          ref: master
+          path: CustomLibrary
+
       - name: Compile all examples
         uses: ArminJo/arduino-test-compile@master
         with:
