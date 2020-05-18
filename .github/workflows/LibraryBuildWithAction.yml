@@ -82,4 +82,4 @@ jobs:
             WhistleSwitch.ino,
             50Hz.ino,
             SimpleFrequencyDetector.ino
-          
+          sketch-names-find-start: examples/*/
