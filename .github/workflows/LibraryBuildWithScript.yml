@@ -9,7 +9,7 @@
 
 # This is the name of the workflow, visible on GitHub UI.
 name: LibraryBuildWithScript
-on:  
+on:
   push: # see: https://help.github.com/en/actions/reference/events-that-trigger-workflows#pull-request-event-pull_request
     paths:
     - '**.ino'
@@ -22,10 +22,10 @@ jobs:
   build:
     name: ${{ matrix.arduino-boards-fqbn }} - test compiling examples
 
-    runs-on: ubuntu-latest # I picked Ubuntu to use shell scripts.
+    runs-on: ubuntu-18.04 # I picked Ubuntu to use shell scripts.
 
     env:
-      # Comma separated list without double quotes around the list. 
+      # Comma separated list without double quotes around the list.
       REQUIRED_LIBRARIES: # ATtinySerialOut,Adafruit BME280 Library
 
     strategy:
@@ -41,10 +41,10 @@ jobs:
         # You may add a suffix behind the fqbn with "|" to specify one board for e.g. different compile options like arduino:avr:uno|trace
         #############################################################################################################
         arduino-boards-fqbn:
-#          - arduino:avr:uno
+          - arduino:avr:uno
           - arduino:avr:uno|All-DEBUG
-#          - digistump:avr:digispark-tiny1
-#          - ATTinyCore:avr:attinyx5:chip=85,clock=1internal
+          - digistump:avr:digispark-tiny1
+          - ATTinyCore:avr:attinyx5:chip=85,clock=1internal
 
         # Specify parameters for each board.
         # With examples-exclude you may exclude specific examples for a board. Use a comma separated list.
@@ -53,12 +53,12 @@ jobs:
           - arduino-boards-fqbn: arduino:avr:uno|All-DEBUG # UNO board with -DDEBUG for all examples
             examples-exclude: 50Hz # Comma separated list of (unique substrings of) example names to exclude in build
             examples-build-properties:
-              All:
-                -DDEBUG
- 
+              All: -DDEBUG -DINFO
+              WhistleSwitch: -DDEBUG -DINFO
+
           - arduino-boards-fqbn: digistump:avr:digispark-tiny1  # ATtiny85 board @1 MHz
             platform-url: https://raw.githubusercontent.com/ArminJo/DigistumpArduino/master/package_digistump_index.json
-            examples-exclude: Blink
+            sketch-names: WhistleSwitch.ino,SimpleFrequencyDetector.ino,50Hz # Comma separated list of sketch names (no path required) or patterns to use in build
 
           - arduino-boards-fqbn: ATTinyCore:avr:attinyx5:chip=85,clock=1internal
             platform-url: http://drazzy.com/package_drazzy.com_index.json
@@ -93,7 +93,7 @@ jobs:
           ENV_REQUIRED_LIBRARIES: ${{ env.REQUIRED_LIBRARIES }}
           ENV_EXAMPLES_EXCLUDE: ${{ matrix.examples-exclude }}
           ENV_EXAMPLES_BUILD_PROPERTIES: ${{ toJson(matrix.examples-build-properties) }}
-          ENV_SKETCH_NAMES: "*.ino"
+          ENV_SKETCH_NAMES: ${{ matrix.sketch-names }}
           ENV_SKETCH_NAMES_FILE_START: .
 
         run: |
@@ -101,4 +101,3 @@ jobs:
             ls -l arduino-test-compile.sh
             chmod +x arduino-test-compile.sh
             ./arduino-test-compile.sh
-          

@@ -10,7 +10,7 @@
 
 # This is the name of the workflow, visible on GitHub UI.
 name: test
-on: 
+on:
   push: # see: https://help.github.com/en/actions/reference/events-that-trigger-workflows#pull-request-event-pull_request
     paths:
     - '**.ino'
@@ -22,13 +22,13 @@ jobs:
   build:
     name: ${{ matrix.arduino-boards-fqbn }} - test compiling examples
 
-    runs-on: ubuntu-latest # I picked Ubuntu to use shell scripts.
+    runs-on: ubuntu-18.04 # I picked Ubuntu to use shell scripts.
 
     env:
-      # Comma separated list without double quotes around the list. 
+      # Comma separated list without double quotes around the list.
       REQUIRED_LIBRARIES: Adafruit NeoPixel,ATtinySerialOut
       CLI_VERSION: latest
-      
+
       # Global color definitions for output colors
       RED: '\033[0;31m'
       GREEN: '\033[0;32m'
@@ -45,7 +45,7 @@ jobs:
         # ATTinyCore:avr:attinyx5:chip=85,clock=1internal, digistump:avr:digispark-tiny, digistump:avr:digispark-pro
         # STM32:stm32:GenF1:pnum=BLUEPILL_F103C8
         # esp8266:esp8266:huzzah:eesz=4M3M,xtal=80, esp32:esp32:featheresp32:FlashFreq=80
-        # You may add a suffix behind the fqbn with "|" to specify one board for e.g. different compile options like arduino:avr:uno|trace 
+        # You may add a suffix behind the fqbn with "|" to specify one board for e.g. different compile options like arduino:avr:uno|trace
         #############################################################################################################
         arduino-boards-fqbn:
           - arduino:avr:uno
@@ -83,7 +83,7 @@ jobs:
               WhistleSwitch:
                 -DDEBUG
                 -DTRACE
-                
+
           - arduino-boards-fqbn: ATTinyCore:avr:attinyx5:chip=85,clock=1internal
             platform-url: http://drazzy.com/package_drazzy.com_index.json
             sketch-names: "*.ino,WhistleSwitch.ino"
@@ -98,7 +98,7 @@ jobs:
           - arduino-boards-fqbn: esp32:esp32:featheresp32:FlashFreq=80
             platform-url: https://dl.espressif.com/dl/package_esp32_index.json
             examples-exclude: WhistleSwitch 50Hz,SimpleFrequencyDetector
-            
+
 ######################################################
 # End of configuration, start of fixed script section
 ######################################################
@@ -125,7 +125,7 @@ jobs:
       # First of all, we clone the repo using the `checkout` action.
       - name: Checkout
         uses: actions/checkout@master
-                
+
       # We use the `arduino/setup-arduino-cli` action to install and
       # configure the Arduino CLI on the system.
       # This is an replacement for: "uses: arduino/setup-arduino-cli@v1.0.0"
@@ -173,7 +173,7 @@ jobs:
           echo PATH=$PATH
           echo RUNNER_TOOL_CACHE=$RUNNER_TOOL_CACHE # /opt/hostedtoolcache
           echo AGENT_TOOLSDIRECTORY=$AGENT_TOOLSDIRECTORY # /opt/hostedtoolcache
-          
+
           echo "matrix.examples-build-properties=${{ toJson(matrix.examples-build-properties) }}"
 
           echo -e "\n\nREQUIRED_LIBRARIES test\n"
@@ -242,7 +242,7 @@ jobs:
           ls -l $HOME/Arduino/libraries/
 
       - name: Install platform from build matrix
-        env: 
+        env:
           ARDUINO_BOARD_FQBN: ${{ matrix.arduino-boards-fqbn }}
           PLATFORM_URL: ${{ matrix.platform-url }}
         run: |
@@ -257,12 +257,12 @@ jobs:
               echo -e "::error::Non Arduino platform $PLATFORM requested, but \"platform-url\" parameter is missing."
               exit 1
             fi
-            
+
             if [[ -n $PLATFORM_URL ]]; then
               PLATFORM_URL=${PLATFORM_URL// /,} # replace space by comma to enable multiple urls which are space separated
               PLATFORM_URL_COMMAND="--additional-urls"
             fi
-            
+
             PLATFORM=${PLATFORM//,/ } # replace all comma by space to enable multiple platforms which are comma separated
             declare -a PLATFORM_ARRAY=( $PLATFORM )
             #declare -p PLATFORM_ARRAY # print properties of PLATFORM_ARRAY
@@ -272,13 +272,13 @@ jobs:
                 echo -e "arduino-cli core install $single_platform $PLATFORM_URL_COMMAND $PLATFORM_URL > /dev/null"
                 arduino-cli core install $single_platform $PLATFORM_URL_COMMAND $PLATFORM_URL > /dev/null
             done
-            
+
             if [[ ${PLATFORM} == esp8266:esp8266 && ! -f /usr/bin/python3 ]]; then
               # python3 is a link in the esp8266 package: /github/home/.arduino15/packages/esp8266/tools/python3/3.7.2-post1/python3 -> /usr/bin/python3
               echo "install python3 for ESP8266"
               apt-get install -qq python3 > /dev/null
             fi
-                      
+
             if [[ $PLATFORM == esp32:esp32 ]]; then
               if [[ ! -f /usr/bin/pip ]]; then
                 echo "install python and pip for ESP32"
@@ -307,7 +307,7 @@ jobs:
             BACKUP_IFS="$IFS"
             IFS=$','
             declare -a REQUIRED_LIBRARIES_ARRAY=( $REQUIRED_LIBRARIES )
-            IFS="$BACKUP_IFS"            
+            IFS="$BACKUP_IFS"
             declare -p REQUIRED_LIBRARIES_ARRAY # print properties of REQUIRED_LIBRARIES_ARRAY
             echo "Install libraries list ${REQUIRED_LIBRARIES_ARRAY[@]}"
             arduino-cli lib install "${REQUIRED_LIBRARIES_ARRAY[@]}"
