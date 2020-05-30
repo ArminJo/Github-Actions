@@ -26,7 +26,7 @@ jobs:
 
     env:
       # Comma separated list without double quotes around the list.
-      REQUIRED_LIBRARIES: ATtinySerialOut
+      REQUIRED_LIBRARIES: # ATtinySerialOut
 
     strategy:
       matrix:
@@ -63,12 +63,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@master
 
-      - name: Checkout custom library
+      - name: Checkout master version of ATtinySerialOut
         uses: actions/checkout@v2
         with:
           repository: ArminJo/ATtinySerialOut
           ref: master
-          path: CustomLibrary
+          path: CustomLibrary # must contain string "Custom"
 
       - name: Compile all examples
         uses: ArminJo/arduino-test-compile@master
