@@ -47,8 +47,6 @@
 
 #include <Arduino.h>
 
-#define VERSION_EXAMPLE "2.0"
-
 #define LED_NO_TRIGGER  5
 #define LED_SIGNAL_STRENGTH  6
 #define LED_PLAUSI_FIRST  7
@@ -72,7 +70,7 @@ void setup() {
     while (!Serial); //delay for Leonardo, but this loops forever for Maple Serial
 #endif
     // Just to know which program is running on my Arduino
-    Serial.println(F("START " __FILE__ "\r\nVersion " VERSION_EXAMPLE " from " __DATE__));
+    Serial.println(F("START " __FILE__ " from " __DATE__ "\r\nUsing library version " VERSION_FREQUENCY_DETECTOR));
 
     // initialize the digital pin as an output.
     pinMode(LED_PLAUSI_FIRST, OUTPUT);
@@ -106,6 +104,7 @@ void loop() {
     uint16_t tFrequency = readSignal();
     tFrequency = doEqualDistributionPlausi();
     computeDirectAndFilteredMatch(tFrequency);
+    //    printPeriodLengthArray(&Serial);
 
     /*
      * Show errors on LED's

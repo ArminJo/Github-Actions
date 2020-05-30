@@ -121,28 +121,13 @@
 #error "Code size of this example is too large to fit in an ATtiny 25 or 45."
 #endif
 
-#if defined(__AVR_ATtiny85__)
-//#define MEASURE_TIMING // not activated yet since there is no timing pin left
-
-//#define TRACE
-//#define DEBUG
-#define INFO
-#include "DebugLevel.h" // to propagate above debug levels
-
-#  if defined(INFO)
-#include "ATtinySerialOut.h" // Available as Arduino library and contained in WhistleSwitch example.
-#  endif
-
-#else
 //#define PRINT_RESULTS_TO_SERIAL_PLOTTER
-//#define MEASURE_TIMING
+//#define MEASURE_TIMING // do not activate for ATTinies since there is no timing pin left
 
 //#define TRACE
 //#define DEBUG
 #define INFO
 #include "DebugLevel.h" // to propagate above debug levels
-
-#endif // defined(__AVR_ATtiny85__)
 
 /*
  * I can whistle from 550 to 1900 Hz (and do it easy from 950 - 1800)
@@ -649,7 +634,7 @@ void toggleRelay() {
 void processMatchState() {
     if (FrequencyDetectorControl.FrequencyMatchFiltered == FREQUENCY_MATCH_INVALID) {
         WhistleSwitchControl.MatchValidCount = 0;
-    } else if (FrequencyDetectorControl.FrequencyMatchFiltered == FREQUENCY_MATCH_HIGHER) {
+    } else if (FrequencyDetectorControl.FrequencyMatchFiltered == FREQUENCY_MATCH_TO_HIGH) {
         // HIGHER -> set blink frequency according to gap between real and maximum-match pitch
         int16_t tLedBlinkMillis = TIMING_FREQUENCY_HIGHER_MILLIS
                 - ((FrequencyDetectorControl.FrequencyFiltered - FrequencyDetectorControl.FrequencyMatchHigh) / 16);
@@ -662,7 +647,7 @@ void processMatchState() {
 #endif
         setFeedbackLedBlinkState(tLedBlinkMillis, -1);
         WhistleSwitchControl.MatchValidCount--;
-    } else if (FrequencyDetectorControl.FrequencyMatchFiltered == FREQUENCY_MATCH_LOWER) {
+    } else if (FrequencyDetectorControl.FrequencyMatchFiltered == FREQUENCY_MATCH_TO_LOW) {
         // LOWER -> set blink frequency according to gap between real and minimal-match pitch
         uint16_t tLedBlinkMillis = TIMING_FREQUENCY_LOWER_MILLIS
                 + ((FrequencyDetectorControl.FrequencyMatchLow - FrequencyDetectorControl.FrequencyFiltered) / 2);
@@ -1024,6 +1009,10 @@ void detectFrequency() {
      */
     tFrequency = doEqualDistributionPlausi();
 
+#  ifdef PRINT_RESULTS_TO_SERIAL_PLOTTER
+    printDataForArduinoPlotter(&Serial);
+#  endif
+
     /*
      * compute match
      */
@@ -1076,20 +1065,13 @@ void detectFrequency() {
         digitalWriteFast(LED_PLAUSI_DISTRIBUTION, HIGH);
     }
 
-    if (FrequencyDetectorControl.FrequencyMatchDirect == FREQUENCY_MATCH_LOWER) {
+    if (FrequencyDetectorControl.FrequencyMatchDirect == FREQUENCY_MATCH_TO_LOW) {
         digitalWriteFast(LED_LOWER, HIGH);
-    } else if (FrequencyDetectorControl.FrequencyMatchDirect == FREQUENCY_MATCH_HIGHER) {
+    } else if (FrequencyDetectorControl.FrequencyMatchDirect == FREQUENCY_MATCH_TO_HIGH) {
         digitalWriteFast(LED_HIGHER, HIGH);
     } else if (FrequencyDetectorControl.FrequencyMatchDirect == FREQUENCY_MATCH) {
         digitalWriteFast(LED_MATCH, HIGH);
     }
-
-#  ifdef PRINT_RESULTS_TO_SERIAL_PLOTTER
-    printDataForArduinoPlotter(&Serial);
-#  endif
-#  ifdef PRINT_INPUT_SIGNAL_TO_PLOTTER
-    printInputSignalValuesForArduinoPlotter(&Serial);
-#  endif
 #endif
 
     /*

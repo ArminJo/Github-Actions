@@ -9,6 +9,8 @@
  * The value of millis() is adjusted after reading.
  * The alternative to disabling the interrupt is getting partially invalid results!
  *
+ * By enabling PRINT_INPUT_SIGNAL_TO_PLOTTER it can be used as simple oscilloscope.
+ *
  *  Copyright (C) 2014-2020  Armin Joachimsmeyer
  *  Email: armin.joachimsmeyer@gmail.com
  *
@@ -69,7 +71,7 @@
 
 FrequencyDetectorControlStruct FrequencyDetectorControl;
 
-const char *ErrorStrings[] = { ErrorString_0, ErrorString_1, ErrorString_2, ErrorString_3, ErrorString_3 };
+const char* ErrorStrings[] = { ErrorString_0, ErrorString_1, ErrorString_2, ErrorString_3, ErrorString_4 };
 
 // Union to speed up the combination of low and high bytes to a word
 // it is not optimal since the compiler still generates 2 unnecessary moves
@@ -364,14 +366,14 @@ uint16_t readSignal() {
     return FrequencyDetectorControl.FrequencyRaw;
 }
 
-/** Overwrite FrequencyDetectorControl.FrequencyRaw with these error values if plausibility check fails:
- *      SIGNAL_DISTRIBUTION_PLAUSI_FAILED 3
+/** Overwrite FrequencyDetectorControl.FrequencyRaw with SIGNAL_DISTRIBUTION_PLAUSI_FAILED 3, if plausibility check fails.
  * Used plausibility rules are:
  * 1. A trigger must be detected in first and last 1/8 of samples
  * 2. Only 1/8 of the samples are allowed to be greater than 1.5 or less than 0.75 of the average period
  * @return the (changed) FrequencyDetectorControl.FrequencyRaw
  */
 uint16_t doEqualDistributionPlausi() {
+    // Only check if no error was detected before
     if (FrequencyDetectorControl.FrequencyRaw > SIGNAL_FREQUENCY_TOO_HIGH) {
         uint8_t tPeriodCount = FrequencyDetectorControl.PeriodCount; // 64 for 512, 128 for 1024 samples
         /*
@@ -386,12 +388,9 @@ uint16_t doEqualDistributionPlausi() {
 #ifdef TRACE
             Serial.print(tAveragePeriod);
             Serial.print("  ");
+            printPeriodLengthArray(&Serial);
 #endif
         for (uint8_t i = 0; i < tPeriodCount; ++i) {
-#ifdef TRACE
-                Serial.print(FrequencyDetectorControl.PeriodLength[i]);
-                Serial.print(",");
-#endif
             if (FrequencyDetectorControl.PeriodLength[i] > tPeriodMax || FrequencyDetectorControl.PeriodLength[i] < tPeriodMin) {
                 tErrorCount++;
             }
@@ -461,11 +460,11 @@ void computeDirectAndFilteredMatch(uint16_t aFrequency) {
         uint8_t tNewFilterValue;
         if (aFrequency < FrequencyDetectorControl.FrequencyMatchLow) {
             // Frequency too low
-            FrequencyDetectorControl.FrequencyMatchDirect = FREQUENCY_MATCH_LOWER;
+            FrequencyDetectorControl.FrequencyMatchDirect = FREQUENCY_MATCH_TO_LOW;
             tNewFilterValue = FILTER_VALUE_MIN;
         } else if (aFrequency > FrequencyDetectorControl.FrequencyMatchHigh) {
             // Frequency too high
-            FrequencyDetectorControl.FrequencyMatchDirect = FREQUENCY_MATCH_HIGHER;
+            FrequencyDetectorControl.FrequencyMatchDirect = FREQUENCY_MATCH_TO_HIGH;
             tNewFilterValue = FILTER_VALUE_MAX;
         } else {
             // Frequency matches
@@ -498,9 +497,9 @@ void computeDirectAndFilteredMatch(uint16_t aFrequency) {
             FrequencyDetectorControl.FrequencyMatchFiltered = FREQUENCY_MATCH_INVALID;
         } else {
             if (FrequencyDetectorControl.MatchLowPassFiltered > FILTER_VALUE_MATCH_HIGHER_THRESHOLD) {
-                FrequencyDetectorControl.FrequencyMatchFiltered = FREQUENCY_MATCH_HIGHER;
+                FrequencyDetectorControl.FrequencyMatchFiltered = FREQUENCY_MATCH_TO_HIGH;
             } else if (FrequencyDetectorControl.MatchLowPassFiltered < FILTER_VALUE_MATCH_LOWER_THRESHOLD) {
-                FrequencyDetectorControl.FrequencyMatchFiltered = FREQUENCY_MATCH_LOWER;
+                FrequencyDetectorControl.FrequencyMatchFiltered = FREQUENCY_MATCH_TO_LOW;
             } else {
                 FrequencyDetectorControl.FrequencyMatchFiltered = FREQUENCY_MATCH;
             }
@@ -508,12 +507,39 @@ void computeDirectAndFilteredMatch(uint16_t aFrequency) {
     }
 }
 
+#define STR_HELPER(x) #x
+#define STR(x) STR_HELPER(x)
+
+void printPeriodLengthArray(Print * aSerial)
+
+{
+    /*
+     * Print frequency or error code
+     */
+    if (FrequencyDetectorControl.FrequencyRaw > SIGNAL_MAX_ERROR_CODE) {
+        aSerial->print(F("Frequency="));
+        aSerial->print(FrequencyDetectorControl.FrequencyRaw);
+    } else {
+        aSerial->print(reinterpret_cast<const __FlashStringHelper *>(ErrorStrings[FrequencyDetectorControl.FrequencyRaw]));
+    }
+
+    /*
+     * Print array size and content
+     */
+    aSerial->print(F(" PeriodLengthArray: size="));
+    aSerial->print(FrequencyDetectorControl.PeriodCount);
+    aSerial->print(F(" of " STR(SIZE_OF_PERIOD_LENGTH_ARRAY_FOR_PLAUSI) " content="));
+
+    for (uint8_t i = 0; i < FrequencyDetectorControl.PeriodCount; ++i) {
+        aSerial->print(FrequencyDetectorControl.PeriodLength[i]);
+        aSerial->print(",");
+    }
+    aSerial->println();
+}
+
 #if defined(PRINT_INPUT_SIGNAL_TO_PLOTTER)
-#  if (defined(VERSION_ATTINY_SERIAL_OUT_MAJOR))
-void printInputSignalValuesForArduinoPlotter(TinySerialOut * aSerial)
-#  else
 void printInputSignalValuesForArduinoPlotter(Print * aSerial)
-#  endif
+
         {
     aSerial->print(F("InputValue TriggerLevel="));
     aSerial->print(FrequencyDetectorControl.TriggerLevel);
@@ -538,11 +564,8 @@ void printInputSignalValuesForArduinoPlotter(Print * aSerial)
 }
 #endif
 
-#if (defined(VERSION_ATTINY_SERIAL_OUT_MAJOR))
-void printTriggerValues(TinySerialOut * aSerial)
-#else
 void printTriggerValues(Print * aSerial)
-#endif
+
 {
     aSerial->print(F("TriggerLower="));
     aSerial->print(FrequencyDetectorControl.TriggerLevelLower);
@@ -550,23 +573,13 @@ void printTriggerValues(Print * aSerial)
     aSerial->println(FrequencyDetectorControl.TriggerLevel);
 }
 
-#if (defined(VERSION_ATTINY_SERIAL_OUT_MAJOR))
-void printLegendForArduinoPlotter(TinySerialOut * aSerial)
-#else
-void printLegendForArduinoPlotter(Print * aSerial)
-#endif
-{
+void printLegendForArduinoPlotter(Print * aSerial) {
     aSerial->println(
             F(
                     "FrequencyMatchDirect*95 MatchDropoutCount*13  MatchLowPassFiltered*2 FrequencyMatchFiltered*100 FrequencyRaw FrequencyFiltered"));
 }
 
-#if (defined(VERSION_ATTINY_SERIAL_OUT_MAJOR))
-void printDataForArduinoPlotter(TinySerialOut * aSerial)
-#else
-void printDataForArduinoPlotter(Print * aSerial)
-#endif
-{
+void printDataForArduinoPlotter(Print * aSerial) {
     static uint8_t sConsecutiveErrorCount = 0; // Print only 10 errors, then stop
 
     if (sConsecutiveErrorCount >= 10) {

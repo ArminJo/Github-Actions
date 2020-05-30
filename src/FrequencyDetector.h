@@ -26,11 +26,17 @@
 #ifndef FREQUENCYDETECTOR_H_
 #define FREQUENCYDETECTOR_H_
 
+#define VERSION_FREQUENCY_DETECTOR "2.0.0"
+#define VERSION_FREQUENCY_DETECTOR_MAJOR 2
+#define VERSION_FREQUENCY_DETECTOR_MINOR 0
+
 /*
- * Version 1.2.0 - 5/2020
+ * Version 2.0.0 - 5/2020
+ * - Renamed `doPlausi()` to `doEqualDistributionPlausi()`.
+ * - Changed error values and computation.
  * - Added documentation.
  * - Added MEASURE_READ_SIGNAL_TIMING capability.
- * - Added plotter output of part of read signal.
+ * - Added plotter output of input signal.
  *
  * Version 1.1.0 - 1/2020
  * - Corrected formula for compensating millis().
@@ -180,14 +186,14 @@
 
 const char ErrorString_0[] PROGMEM = "No trigger";
 const char ErrorString_1[] PROGMEM = "Signal low";
-const char ErrorString_2[] PROGMEM = "Frequency too high / noise";
-const char ErrorString_3[] PROGMEM = "Not enough zero crossings";
+const char ErrorString_2[] PROGMEM = "Frequency too low";
+const char ErrorString_3[] PROGMEM = "Frequency too high / noise";
 const char ErrorString_4[] PROGMEM = "Periods too different";
 extern const char *ErrorStrings[SIGNAL_MAX_ERROR_CODE + 1];
 
 // Result values for Match*. Use compiler switch -fshort-enums otherwise it inflates the generated code
 enum MatchStateEnum {
-    FREQUENCY_MATCH_INVALID /*Errors have happened*/, FREQUENCY_MATCH_LOWER, FREQUENCY_MATCH, FREQUENCY_MATCH_HIGHER
+    FREQUENCY_MATCH_INVALID /*Errors have happened*/, FREQUENCY_MATCH_TO_LOW, FREQUENCY_MATCH, FREQUENCY_MATCH_TO_HIGH
 };
 
 /*
@@ -262,25 +268,34 @@ struct FrequencyDetectorControlStruct {
     // OUTPUT
     uint16_t FrequencyFiltered;   // Low pass filter value for frequency, e.g. to compute stable difference to target frequency.
 
-    uint8_t FrequencyMatchDirect; // Result of match: 0 to 3, FREQUENCY_MATCH_INVALID, FREQUENCY_MATCH_LOWER, FREQUENCY_MATCH, FREQUENCY_MATCH_HIGHER
+    uint8_t FrequencyMatchDirect; // Result of match: 0 to 3, FREQUENCY_MATCH_INVALID, FREQUENCY_MATCH_TO_LOW, FREQUENCY_MATCH, FREQUENCY_MATCH_TO_HIGH
     uint8_t FrequencyMatchFiltered; // same range asFrequencyMatchDirect. Match state processed by low pass filter
     // INTERNALLY
     uint8_t MatchLowPassFiltered; // internal value 0 to FILTER_VALUE_MAX/200. Low pass filter value for computing FrequencyMatchFiltered
 };
 
+/*
+ * Reference shift values are complicated for ATtinyX5 since we have the extra register bit REFS2
+ * in ATTinyCore, this bit is handled programmatical and therefore the defines are different.
+ * To keep my library small, I use the changed defines.
+ * After including this file you can not call the ATTinyCore readAnalog functions reliable, if you specify references other than default!
+ */
 #if defined(__AVR_ATtiny25__) || defined(__AVR_ATtiny45__) || defined(__AVR_ATtiny85__)
 // defines are from Arduino.h, the can be used without bit reordering
+#ifdef ATTINY_CORE
+#undef DEFAULT
 #undef EXTERNAL
 #undef INTERNAL1V1
 #undef INTERNAL
 #undef INTERNAL2V56
 #undef INTERNAL2V56_EXTCAP
-//  #define DEFAULT 0
-  #define EXTERNAL 4
-  #define INTERNAL1V1 8
-  #define INTERNAL INTERNAL1V1
-  #define INTERNAL2V56 9
-  #define INTERNAL2V56_EXTCAP 13
+#endif
+#define DEFAULT 0
+#define EXTERNAL 4
+#define INTERNAL1V1 8
+#define INTERNAL INTERNAL1V1
+#define INTERNAL2V56 9
+#define INTERNAL2V56_EXTCAP 13
 #endif
 
 extern FrequencyDetectorControlStruct FrequencyDetectorControl;
@@ -299,20 +314,12 @@ uint16_t doEqualDistributionPlausi();
 void computeDirectAndFilteredMatch(uint16_t aFrequency);
 
 
-#if (defined(VERSION_ATTINY_SERIAL_OUT_MAJOR))
-void printTriggerValues(TinySerialOut * aSerial);
-void printLegendForArduinoPlotter(TinySerialOut * aSerial);
-void printDataForArduinoPlotter(TinySerialOut * aSerial);
-#  if defined(PRINT_INPUT_SIGNAL_TO_PLOTTER)
-void printInputSignalValuesForArduinoPlotter(TinySerialOut * aSerial);
-#  endif
-#else
 void printTriggerValues(Print * aSerial);
+void printPeriodLengthArray(Print * aSerial);
 void printLegendForArduinoPlotter(Print * aSerial);
 void printDataForArduinoPlotter(Print * aSerial);
-#  if defined(PRINT_INPUT_SIGNAL_TO_PLOTTER)
+#if defined(PRINT_INPUT_SIGNAL_TO_PLOTTER)
 void printInputSignalValuesForArduinoPlotter(Print * aSerial);
-#  endif
 #endif
 
 #endif /* FREQUENCYDETECTOR_H_ */
