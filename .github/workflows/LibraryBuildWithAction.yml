@@ -83,3 +83,5 @@ jobs:
             50Hz.ino,
             SimpleFrequencyDetector.ino
           sketch-names-find-start: examples/*/
+          debug-compile: true
+

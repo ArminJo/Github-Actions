@@ -27,6 +27,9 @@ jobs:
     env:
       # Comma separated list without double quotes around the list.
       REQUIRED_LIBRARIES: ATtinySerialOut
+      SKETCH_NAMES_FIND_START: .
+      DEBUG_INSTALL: true
+      DEBUG_COMPILE: true
 
       # Global color definitions for output colors
       RED: '\033[0;31m'
@@ -48,6 +51,7 @@ jobs:
         #############################################################################################################
         arduino-boards-fqbn:
           - arduino:avr:uno
+          - arduino:avr:uno|All-DEBUG
           - digistump:avr:digispark-tiny1
           - ATTinyCore:avr:attinyx5:chip=85,clock=1internal
 
@@ -55,9 +59,15 @@ jobs:
         # With examples-exclude you may exclude specific examples for a board. Use a comma separated list.
         #############################################################################################################
         include:
+          - arduino-boards-fqbn: arduino:avr:uno|All-DEBUG # UNO board with -DDEBUG for all examples
+            examples-exclude: 50Hz # Comma separated list of (unique substrings of) example names to exclude in build
+            examples-build-properties:
+              All: -DDEBUG -DINFO
+              WhistleSwitch: -DDEBUG -DINFO
+
           - arduino-boards-fqbn: digistump:avr:digispark-tiny1  # ATtiny85 board @1 MHz
             platform-url: https://raw.githubusercontent.com/ArminJo/DigistumpArduino/master/package_digistump_index.json
-            examples-exclude: Blink
+            sketch-names: WhistleSwitch.ino,SimpleFrequencyDetector.ino,50Hz # Comma separated list of sketch names (no path required) or patterns to use in build
 
           - arduino-boards-fqbn: ATTinyCore:avr:attinyx5:chip=85,clock=1internal
             platform-url: http://drazzy.com/package_drazzy.com_index.json
@@ -81,81 +91,216 @@ jobs:
       - name: Setup Arduino CLI
         uses: arduino/setup-arduino-cli@v1.0.0
 
+
+      # echo -e HOME=\"$HOME\" # /home/runner
+      # echo PWD=$PWD # /home/runner/work/Github-Actions-Test/Github-Actions-Test
+      # which arduino-cli # /opt/hostedtoolcache/arduino-cli/0.9.0/x64/arduino-cli
+
+      - name: Add *Custom* directories to Arduino library directory
+        run: |
+          if ls $GITHUB_WORKSPACE/*Custom* >/dev/null 2>&1; then
+            echo -e "\n\n"${YELLOW}Add *Custom* as Arduino library
+            mkdir -p "$HOME/Arduino/libraries"
+            # mv to avoid the library examples to be test compiled
+            mv -n -v $GITHUB_WORKSPACE/*Custom* "$HOME/Arduino/libraries/"
+          fi
+
       - name: Link this repository as Arduino library
         run: |
-          mkdir -p $HOME/Arduino/libraries
-          ln -s $PWD $HOME/Arduino/libraries/.
+          if [[ -f $GITHUB_WORKSPACE/library.properties ]]; then
+            echo -e "\n\n"${YELLOW}Link this repository as Arduino library
+            mkdir -p "$HOME/Arduino/libraries"
+            ln -s "$GITHUB_WORKSPACE" "$HOME/Arduino/libraries/."
+            if [[ $DEBUG_INSTALL == true ]]; then
+             echo "ls -l $HOME/Arduino/libraries/"
+             ls -l $HOME/Arduino/libraries/
+            fi
+          fi
 
-      - name: Install platform from build matrix
+      - name: Update index and install the required board platform
         env:
-          FQBN: ${{ matrix.arduino-boards-fqbn }}
+          ARDUINO_PLATFORM: ${{ matrix.arduino-platform }}
+          PLATFORM_URL: ${{ matrix.platform-url}}
+          ARDUINO_BOARD_FQBN: ${{ matrix.arduino-boards-fqbn }}
         run: |
-          arduino-cli version
-          # Compute platform value and check for platform-url parameter
-          remainder=${FQBN#*:}; PLATFORM=${FQBN%%:*}:${remainder%%:*}
-          if [[ ${PLATFORM} != *"arduino"* && ! (-f ./arduino-cli.yaml || "${{ matrix.platform-url }}" != ""  ) ]]; then
-            echo "::error::Non Arduino platform ${PLATFORM} requested, but \"platform-url\" parameter and file arduino-cli.yaml are missing."; exit 1
-          fi
-          if [[ "${{ matrix.platform-url }}" != "" ]]; then
-            arduino-cli core update-index --additional-urls "${{ matrix.platform-url }}"
-            echo -e "arduino-cli core install $PLATFORM --additional-urls \"${{ matrix.platform-url }}\""
-            arduino-cli core install ${PLATFORM} --additional-urls "${{ matrix.platform-url }}" # for each job / board one platform is installed
+          echo -e "\n\n"${YELLOW}Update index and install the required board platform
+          echo ARDUINO_PLATFORM=$ARDUINO_PLATFORM
+          echo ARDUINO_BOARD_FQBN=$ARDUINO_BOARD_FQBN
+          if [[ -z $ARDUINO_PLATFORM ]]; then
+            # ARDUINO_PLATFORM is empty -> derive platform from the 2 first elements of the arduino-board-fqbn
+            remainder=${ARDUINO_BOARD_FQBN#*:}
+            PLATFORM=${ARDUINO_BOARD_FQBN%%:*}:${remainder%%:*}
           else
-            arduino-cli core update-index
-            echo "arduino-cli core install $PLATFORM"
-            arduino-cli core install ${PLATFORM} # for each job / board one platform is installed
+            PLATFORM=$ARDUINO_PLATFORM
           fi
-          if [ ${PLATFORM} == "esp32:esp32" ]; then pip install pyserial; fi
+          echo PLATFORM=${PLATFORM}
+          if [[ ${PLATFORM} != *arduino* && -z $PLATFORM_URL ]]; then
+            echo -e "::error::Non Arduino platform $PLATFORM requested, but \"platform-url\" parameter is missing."
+            exit 1
+          fi
+
+          if [[ -n $PLATFORM_URL ]]; then
+            PLATFORM_URL=${PLATFORM_URL// /,} # replace space by comma to enable multiple urls which are space separated
+            PLATFORM_URL_COMMAND="--additional-urls"
+          fi
+
+          PLATFORM=${PLATFORM//,/ } # replace all comma by space to enable multiple platforms which are comma separated
+          declare -a PLATFORM_ARRAY=( $PLATFORM )
+          if [[ $DEBUG_INSTALL == true ]]; then
+            declare -p PLATFORM_ARRAY # print properties of PLATFORM_ARRAY
+          fi
+          for single_platform in "${PLATFORM_ARRAY[@]}"; do # Loop over all platforms specified
+            if [[ $DEBUG_INSTALL == true ]]; then
+              echo -e "arduino-cli core update-index $PLATFORM_URL_COMMAND $PLATFORM_URL -v"
+              arduino-cli core update-index $PLATFORM_URL_COMMAND $PLATFORM_URL -v # must specify --additional-urls here
+              echo -e "arduino-cli core install $single_platform $PLATFORM_URL_COMMAND $PLATFORM_URL -v"
+              arduino-cli core install $single_platform $PLATFORM_URL_COMMAND $PLATFORM_URL -v
+            else
+              echo -e "arduino-cli core update-index $PLATFORM_URL_COMMAND $PLATFORM_URL > /dev/null"
+              arduino-cli core update-index $PLATFORM_URL_COMMAND $PLATFORM_URL > /dev/null # must specify --additional-urls here
+              echo -e "arduino-cli core install $single_platform $PLATFORM_URL_COMMAND $PLATFORM_URL > /dev/null"
+              arduino-cli core install $single_platform $PLATFORM_URL_COMMAND $PLATFORM_URL > /dev/null
+            fi
+          done
+
+          echo -e "\n\n"${YELLOW}Special esp8266 and esp32 platform handling
+          if [[ ${PLATFORM} == esp8266:esp8266 && ! -f /usr/bin/python3 ]]; then
+            # python3 is a link in the esp8266 package: /github/home/.arduino15/packages/esp8266/tools/python3/3.7.2-post1/python3 -> /usr/bin/python3
+            echo -e "\n\n"${YELLOW}install python3 for ESP8266
+            apt-get install -qq python3 > /dev/null
+          fi
+
+          if [[ $PLATFORM == esp32:esp32 ]]; then
+            if [[ ! -f /usr/bin/pip && ! -f /usr/bin/python ]]; then
+              echo -e "\n\n"${YELLOW}install python and pip for ESP32
+          # Here we would get the warning: The directory '/github/home/.cache/pip/http' or its parent directory is not owned by the current user and the cache has been disabled.
+          #                                Please check the permissions and owner of that directory. If executing pip with sudo, you may want sudo's -H flag.
+              apt-get install -qq python-pip > /dev/null 2>&1 # this installs also python
+            fi
+            pip install pyserial
+          fi
+        shell: bash {0} # Needed to avoid an exit at first error
 
       - name: List installed boards with their FQBN
+        # ls -l $HOME/.arduino15/packages/ # I see only arduino and one of the Attiny cores but not all 3 together
         run: |
-          arduino-cli board listall
+          echo -e "\n\n"$YELLOW"List installed boards with their FQBN"
+          if [[ $DEBUG_INSTALL == true ]]; then
+            echo arduino-cli board listall -v
+            arduino-cli board listall -v
+          else
+            echo arduino-cli board listall
+            arduino-cli board listall
+          fi
 
-      - name: Install libraries
+      - name: Install required libraries
         run: |
+          echo -e "\n"$YELLOW"Install required libraries"
           if [[ -z $REQUIRED_LIBRARIES ]]; then
             echo "No additional libraries to install"
           else
             echo "Install libraries $REQUIRED_LIBRARIES"
-            # Support comma separated library list
             BACKUP_IFS="$IFS"
+            # Split comma separated library list
             IFS=$','
             declare -a REQUIRED_LIBRARIES_ARRAY=( $REQUIRED_LIBRARIES )
             IFS="$BACKUP_IFS"
-            declare -p REQUIRED_LIBRARIES_ARRAY # print properties of REQUIRED_LIBRARIES_ARRAY
-            echo "Install libraries list ${REQUIRED_LIBRARIES_ARRAY[@]}"
+            echo "Install single library ${REQUIRED_LIBRARIES_ARRAY[@]}"
             arduino-cli lib install "${REQUIRED_LIBRARIES_ARRAY[@]}"
+            if [[ $? -ne 0 ]]; then
+              echo "::error::Installation of "$REQUIRED_LIBRARIES" failed"
+              exit 1
+            fi
           fi
 
-      # Finally, we compile all examples, using all parameter given in the build matrix.
       - name: Compile all examples
         env:
-          FQBN: ${{ matrix.arduino-boards-fqbn }}
-          BUILD_PROPERTIES: ${{ toJson(matrix.examples-build-properties) }}
+          ARDUINO_BOARD_FQBN: ${{ matrix.arduino-boards-fqbn }}
+          EXAMPLES_BUILD_PROPERTIES: ${{ toJson(matrix.examples-build-properties) }}
+          SKETCH_NAMES: ${{ matrix.sketch-names }}
         run: |
+          if [[ -z $SKETCH_NAMES ]]; then echo -e "Set SKETCH_NAMES to default value: \"*.ino\""; SKETCH_NAMES='*.ino'; fi
+
+          echo -e "\n"$YELLOW"Compiling sketches / examples for board $ARDUINO_BOARD_FQBN \n"
+
           # If matrix.examples-build-properties are specified, create an associative shell array
-          BUILD_PROPERTIES=${BUILD_PROPERTIES#\{} # remove "{"
-          if [[ $BUILD_PROPERTIES != "null" ]]; then declare -A PROP_MAP="( $(echo $BUILD_PROPERTIES | sed -E 's/"(\w*)": *([^,}]*)[,}]/\[\1\]=\2/g' ) )"; else declare -A PROP_MAP=( [dummy]=dummy ); fi
-          echo -e "Compiling examples for board ${{ matrix.arduino-boards-fqbn }} \n"
-          EXAMPLES=($(find . -name "*.ino"))
-          for example in "${EXAMPLES[@]}"; do # Loop over all example directories
-            EXAMPLE_NAME=$(basename $(dirname $example))
-            if [[ "${{ matrix.examples-exclude }}" == *"$EXAMPLE_NAME"* ]]; then
-              echo -e "Skipping $EXAMPLE_NAME \xe2\x9e\x9e" # Right arrow
-            else
-              # check if there is an entry in the associative array and create a compile parameter
-              echo -n "Compiling $EXAMPLE_NAME "
-              if [[ "${PROP_MAP[$EXAMPLE_NAME]}" != "" ]]; then echo -n "with ${PROP_MAP[$EXAMPLE_NAME]} "; fi
-              build_stdout=$(arduino-cli compile --verbose --warnings all --fqbn ${FQBN%|*} --build-properties compiler.cpp.extra_flags="${PROP_MAP[$EXAMPLE_NAME]}" $(dirname $example) 2>&1);
-              if [ $? -ne 0 ]; then
-                echo -e ""$RED"\xe2\x9c\x96" # If ok output a green checkmark else a red X and the command output.
-                echo "::error::Compile of  $EXAMPLE_NAME ${PROP_MAP[$EXAMPLE_NAME]} failed"
-                exit_code=1
-                echo -e "$build_stdout \n"
-              else
-                echo -e ""$GREEN"\xe2\x9c\x93"
-              fi
+          if [[ -n $EXAMPLES_BUILD_PROPERTIES && $EXAMPLES_BUILD_PROPERTIES != "null" ]]; then # contains "null", if passed as environment variable
+            echo EXAMPLES_BUILD_PROPERTIES=$EXAMPLES_BUILD_PROPERTIES
+            EXAMPLES_BUILD_PROPERTIES=${EXAMPLES_BUILD_PROPERTIES#\{} # remove the "{". The "}" is required as end token
+            declare -A PROP_MAP="( $(echo $EXAMPLES_BUILD_PROPERTIES | sed -E 's/"(\w*)": *([^,}]*)[,}]/\[\1\]=\2/g' ) )"
+            declare -p PROP_MAP # print properties of PROP_MAP
+          else
+            declare -A PROP_MAP=( [dummy]=dummy )
+          fi
+
+          #
+          # Finally, we compile all examples
+          #
+          # Split comma separated sketch name list
+          BACKUP_IFS="$IFS"
+          IFS=$','
+          SKETCH_NAMES=${SKETCH_NAMES// /} # replace all spaces
+          declare -a SKETCH_NAMES_ARRAY=( $SKETCH_NAMES ) # declare an indexed array
+          if [[ $DEBUG_COMPILE == true ]]; then
+            declare -p SKETCH_NAMES_ARRAY
+          fi
+          IFS="$BACKUP_IFS"
+          for sketch_name in "${SKETCH_NAMES_ARRAY[@]}"; do # Loop over all sketch names
+            declare -a SKETCHES=($(find ${SKETCH_NAMES_FIND_START} -type f -name "$sketch_name")) # only search for files
+            if [[ $DEBUG_COMPILE == true ]]; then
+              declare -p SKETCHES
             fi
+            for sketch in "${SKETCHES[@]}"; do # Loop over all sketch files
+              SKETCH_PATH=$(dirname $sketch) # complete path to sketch
+              SKETCH_DIR=${SKETCH_PATH##*/}  # directory of sketch, must match sketch basename
+              SKETCH_FILENAME=$(basename $sketch) # complete name of sketch
+              SKETCH_EXTENSION=${SKETCH_FILENAME##*.} # extension of sketch
+              SKETCH_BASENAME=${SKETCH_FILENAME%%.*} # name wihout extension / basename of sketch, must match directory name
+              if [[ $EXAMPLES_EXCLUDE == *"$SKETCH_BASENAME"* ]]; then
+                echo -e "Skipping $SKETCH_BASENAME \xe2\x9e\x9e" # Right arrow
+              else
+                # If sketch name does not end with .ino, rename it locally
+                if [[ $SKETCH_EXTENSION != ino ]]; then
+                  echo "Rename ${SKETCH_PATH}/${SKETCH_FILENAME} to ${SKETCH_PATH}/${SKETCH_BASENAME}.ino"
+                  mv ${SKETCH_PATH}/${SKETCH_FILENAME} ${SKETCH_PATH}/${SKETCH_BASENAME}.ino
+                fi
+                # If directory name does not match sketch name, create an appropriate directory, copy the files recursively and compile
+                if [[ $SKETCH_DIR != $SKETCH_BASENAME ]]; then
+                  mkdir $HOME/$SKETCH_BASENAME
+                  echo "Creating directory $HOME/$SKETCH_BASENAME and copy ${SKETCH_PATH}/* to it"
+                  cp -R ${SKETCH_PATH}/* $HOME/$SKETCH_BASENAME
+                  SKETCH_PATH=$HOME/$SKETCH_BASENAME
+                fi
+                # check if there is an entry in the associative array and create compile parameter to put in compiler.cpp.extra_flags
+                echo -n "Compiling $SKETCH_BASENAME "
+                if [[ -n ${PROP_MAP[$SKETCH_BASENAME]} ]]; then
+                  CPP_EXTRA_FLAGS=${PROP_MAP[$SKETCH_BASENAME]}
+                  echo -n "with $CPP_EXTRA_FLAGS "
+                elif [[ -n ${PROP_MAP[All]} ]]; then
+                  CPP_EXTRA_FLAGS=${PROP_MAP[All]}
+                  echo -n "with $CPP_EXTRA_FLAGS "
+                else
+                  CPP_EXTRA_FLAGS=
+                fi
+                  build_stdout=$(arduino-cli compile --verbose --warnings all --fqbn ${ARDUINO_BOARD_FQBN%|*} --build-path $SKETCH_PATH --build-properties compiler.cpp.extra_flags="${CPP_EXTRA_FLAGS}" $SKETCH_PATH 2>&1)
+                if [[ $? -ne 0 ]]; then
+                  echo -e ""$RED"\xe2\x9c\x96" # If ok output a green checkmark else a red X and the command output.
+                  echo "arduino-cli compile --verbose --warnings all --fqbn ${ARDUINO_BOARD_FQBN%|*} --build-path $SKETCH_PATH --build-properties compiler.cpp.extra_flags=\"${CPP_EXTRA_FLAGS}\" $SKETCH_PATH"
+                  echo "::error::Compile of  $SKETCH_BASENAME ${CPP_EXTRA_FLAGS} failed"
+                  echo -e "$build_stdout \n"
+                  exit_code=1
+                else
+                  echo -e ""$GREEN"\xe2\x9c\x93"
+                  echo "arduino-cli compile --verbose --warnings all --fqbn ${ARDUINO_BOARD_FQBN%|*} --build-path $SKETCH_PATH --build-properties compiler.cpp.extra_flags=\"${CPP_EXTRA_FLAGS}\" $SKETCH_PATH"
+                  if [[ $DEBUG_COMPILE == true ]]; then
+                    echo "Debug mode enabled => compile output will be printed also for successful compilation and sketch directory is listed after compilation"
+                    echo -e "$build_stdout \n"
+                    echo -e "\nls -l $SKETCH_PATH\n\n"
+                    ls -l $SKETCH_PATH
+                  fi
+                fi
+              fi
+            done
           done
           exit $exit_code
         shell: bash {0} # Needed to avoid an exit at first error

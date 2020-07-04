@@ -279,7 +279,7 @@ uint16_t predefinedRangesEnd[] = { 2050, 1680, 1480, 1280, 1130, 990, 1900, 1530
 #include "EasyButtonAtInt01.cpp.h"
 void handleButtonPress(bool aButtonToggleState);
 void handleButtonRelease(bool aButtonToggleState, uint16_t aButtonPressDurationMillis);
-EasyButton ButtonAtPin3(false, &handleButtonPress, &handleButtonRelease); // false -> button is not connected to INT0 => connected to INT1
+EasyButton ButtonAtPin3(&handleButtonPress, &handleButtonRelease); // Only one button enabled -> button is connected to INT1
 
 // plausibility for frequency in advanced programming mode
 #define MAX_ACCEPTABLE_DELTA_FREQ 100 // max delta Freq for frequency change between two consecutive measurement in advanced programming mode. Used to detect dropouts.
