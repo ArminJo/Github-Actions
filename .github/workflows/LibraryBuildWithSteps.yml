@@ -29,7 +29,7 @@ jobs:
       REQUIRED_LIBRARIES: ATtinySerialOut
       SKETCH_NAMES_FIND_START: .
       DEBUG_INSTALL: true
-      DEBUG_COMPILE: true
+#      DEBUG_COMPILE: true
 
       # Global color definitions for output colors
       RED: '\033[0;31m'
@@ -273,7 +273,9 @@ jobs:
                   cp -R ${SKETCH_PATH}/* $HOME/$SKETCH_BASENAME
                   SKETCH_PATH=$HOME/$SKETCH_BASENAME
                 fi
-                # check if there is an entry in the associative array and create compile parameter to put in compiler.cpp.extra_flags
+                # Check if there is an entry in the associative array and create compile parameter to put in compiler.*.extra_flags
+                # This flags are also defined in platform.txt as empty, to be overwritten by a platform.local.txt definition.
+                # But I never saw a distribution using this fature, so we can go on here :-)
                 echo -n "Compiling $SKETCH_BASENAME "
                 if [[ -n ${PROP_MAP[$SKETCH_BASENAME]} ]]; then
                   GCC_EXTRA_FLAGS=${PROP_MAP[$SKETCH_BASENAME]}
@@ -284,16 +286,29 @@ jobs:
                 else
                   GCC_EXTRA_FLAGS=
                 fi
-                  build_stdout=$(arduino-cli compile --verbose --warnings all --fqbn ${ARDUINO_BOARD_FQBN%|*} --build-path $PWD/$SKETCH_PATH --build-properties compiler.cpp.extra_flags="${GCC_EXTRA_FLAGS}" $SKETCH_PATH 2>&1)
+                  # must use $PWD/$SKETCH_PATH, since arduino-cli does not support relative path for --build-path
+                if [[ -z $GCC_EXTRA_FLAGS ]]; then
+                  build_stdout=$(arduino-cli compile --verbose --warnings all --fqbn ${ARDUINO_BOARD_FQBN%|*} --build-path $PWD/$SKETCH_PATH $SKETCH_PATH 2>&1)
+                else
+                  build_stdout=$(arduino-cli compile --verbose --warnings all --fqbn ${ARDUINO_BOARD_FQBN%|*} --build-path $PWD/$SKETCH_PATH --build-properties compiler.cpp.extra_flags="${GCC_EXTRA_FLAGS}" --build-properties compiler.c.extra_flags="${GCC_EXTRA_FLAGS}" --build-properties compiler.S.extra_flags="${GCC_EXTRA_FLAGS}" $SKETCH_PATH 2>&1)
+                fi
                 if [[ $? -ne 0 ]]; then
                   echo -e ""$RED"\xe2\x9c\x96" # If ok output a green checkmark else a red X and the command output.
-                  echo "arduino-cli compile --verbose --warnings all --fqbn ${ARDUINO_BOARD_FQBN%|*} --build-path $PWD/$SKETCH_PATH --build-properties compiler.cpp.extra_flags=\"${GCC_EXTRA_FLAGS}\" $SKETCH_PATH"
+                if [[ -z $GCC_EXTRA_FLAGS ]]; then
+                  echo "arduino-cli compile --verbose --warnings all --fqbn ${ARDUINO_BOARD_FQBN%|*} --build-path $PWD/$SKETCH_PATH $SKETCH_PATH"
+                else
+                  echo "arduino-cli compile --verbose --warnings all --fqbn ${ARDUINO_BOARD_FQBN%|*} --build-path $PWD/$SKETCH_PATH --build-properties compiler.cpp.extra_flags=\"${GCC_EXTRA_FLAGS}\" --build-properties compiler.c.extra_flags=\"${GCC_EXTRA_FLAGS}\" --build-properties compiler.S.extra_flags=\"${GCC_EXTRA_FLAGS}\" $SKETCH_PATH"
+                fi
                   echo "::error::Compile of  $SKETCH_BASENAME ${GCC_EXTRA_FLAGS} failed"
                   echo -e "$build_stdout \n"
                   exit_code=1
                 else
                   echo -e ""$GREEN"\xe2\x9c\x93"
-                  echo "arduino-cli compile --verbose --warnings all --fqbn ${ARDUINO_BOARD_FQBN%|*} --build-path $PWD/$SKETCH_PATH --build-properties compiler.cpp.extra_flags=\"${GCC_EXTRA_FLAGS}\" $SKETCH_PATH"
+                if [[ -z $GCC_EXTRA_FLAGS ]]; then
+                  echo "arduino-cli compile --verbose --warnings all --fqbn ${ARDUINO_BOARD_FQBN%|*} --build-path $PWD/$SKETCH_PATH $SKETCH_PATH"
+                else
+                  echo "arduino-cli compile --verbose --warnings all --fqbn ${ARDUINO_BOARD_FQBN%|*} --build-path $PWD/$SKETCH_PATH --build-properties compiler.cpp.extra_flags=\"${GCC_EXTRA_FLAGS}\" --build-properties compiler.c.extra_flags=\"${GCC_EXTRA_FLAGS}\" --build-properties compiler.S.extra_flags=\"${GCC_EXTRA_FLAGS}\" $SKETCH_PATH"
+                fi
                   if [[ $DEBUG_COMPILE == true ]]; then
                     echo "Debug mode enabled => compile output will be printed also for successful compilation and sketch directory is listed after compilation"
                     echo -e "$build_stdout \n"
