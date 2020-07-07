@@ -220,9 +220,7 @@ jobs:
           SKETCH_NAMES: ${{ matrix.sketch-names }}
         run: |
           if [[ -z $SKETCH_NAMES ]]; then echo -e "Set SKETCH_NAMES to default value: \"*.ino\""; SKETCH_NAMES='*.ino'; fi
-
           echo -e "\n"$YELLOW"Compiling sketches / examples for board $ARDUINO_BOARD_FQBN \n"
-
           # If matrix.examples-build-properties are specified, create an associative shell array
           if [[ -n $EXAMPLES_BUILD_PROPERTIES && $EXAMPLES_BUILD_PROPERTIES != "null" ]]; then # contains "null", if passed as environment variable
             echo EXAMPLES_BUILD_PROPERTIES=$EXAMPLES_BUILD_PROPERTIES
@@ -233,14 +231,18 @@ jobs:
             declare -A PROP_MAP=( [dummy]=dummy )
           fi
 
+          echo SKETCH_NAMES="$SKETCH_NAMES"
+
           #
           # Finally, we compile all examples
           #
           # Split comma separated sketch name list
           BACKUP_IFS="$IFS"
           IFS=$','
-          SKETCH_NAMES=${SKETCH_NAMES// /} # replace all spaces
+          SKETCH_NAMES=${SKETCH_NAMES// /} # Replace all spaces
+          GLOBIGNORE=* # Disable filename expansion (globbing) of *.ino to abc.ino if abc.ino is a file in the directory
           declare -a SKETCH_NAMES_ARRAY=( $SKETCH_NAMES ) # declare an indexed array
+          GLOBIGNORE= # Enable it for cp command below
           if [[ $DEBUG_COMPILE == true ]]; then
             declare -p SKETCH_NAMES_ARRAY
           fi
