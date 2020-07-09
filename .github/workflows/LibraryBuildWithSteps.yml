@@ -100,20 +100,27 @@ jobs:
         run: |
           if ls $GITHUB_WORKSPACE/*Custom* >/dev/null 2>&1; then
             echo -e "\n\n"${YELLOW}Add *Custom* as Arduino library
-            mkdir -p "$HOME/Arduino/libraries"
+            mkdir --parents $HOME/Arduino/libraries
+            rm --force --recursive $GITHUB_WORKSPACE/*Custom*/.git # do not want to move the whole .git directory
             # mv to avoid the library examples to be test compiled
-            mv -n -v $GITHUB_WORKSPACE/*Custom* "$HOME/Arduino/libraries/"
+            if [[ $DEBUG_INSTALL == true ]]; then
+              echo mv --no-clobber --verbose $GITHUB_WORKSPACE/\*Custom\* $HOME/Arduino/libraries/
+              mv --no-clobber --verbose $GITHUB_WORKSPACE/*Custom* $HOME/Arduino/libraries/
+            else
+              echo mv --no-clobber $GITHUB_WORKSPACE/\*Custom\* $HOME/Arduino/libraries/
+              mv --no-clobber $GITHUB_WORKSPACE/*Custom* $HOME/Arduino/libraries/
+            fi
           fi
 
       - name: Link this repository as Arduino library
         run: |
           if [[ -f $GITHUB_WORKSPACE/library.properties ]]; then
             echo -e "\n\n"${YELLOW}Link this repository as Arduino library
-            mkdir -p "$HOME/Arduino/libraries"
-            ln -s "$GITHUB_WORKSPACE" "$HOME/Arduino/libraries/."
+            mkdir --parents $HOME/Arduino/libraries
+            ln --symbolic $GITHUB_WORKSPACE $HOME/Arduino/libraries/.
             if [[ $DEBUG_INSTALL == true ]]; then
-             echo "ls -lLRa $HOME/Arduino/libraries/"
-             ls -lLRa $HOME/Arduino/libraries/
+             echo ls -l --dereference --recursive --all $HOME/Arduino/libraries/
+             ls -l --dereference --recursive --all $HOME/Arduino/libraries/
             fi
           fi
 
@@ -124,10 +131,8 @@ jobs:
           ARDUINO_BOARD_FQBN: ${{ matrix.arduino-boards-fqbn }}
         run: |
           echo -e "\n\n"${YELLOW}Update index and install the required board platform
-          echo ARDUINO_PLATFORM=$ARDUINO_PLATFORM
-          echo ARDUINO_BOARD_FQBN=$ARDUINO_BOARD_FQBN
           if [[ -z $ARDUINO_PLATFORM ]]; then
-            # ARDUINO_PLATFORM is empty -> derive platform from the 2 first elements of the arduino-board-fqbn
+          # ARDUINO_PLATFORM is empty -> derive platform from the 2 first elements of the arduino-board-fqbn
             remainder=${ARDUINO_BOARD_FQBN#*:}
             PLATFORM=${ARDUINO_BOARD_FQBN%%:*}:${remainder%%:*}
           else
@@ -151,10 +156,10 @@ jobs:
           fi
           for single_platform in "${PLATFORM_ARRAY[@]}"; do # Loop over all platforms specified
             if [[ $DEBUG_INSTALL == true ]]; then
-              echo -e "arduino-cli core update-index $PLATFORM_URL_COMMAND $PLATFORM_URL -v"
-              arduino-cli core update-index $PLATFORM_URL_COMMAND $PLATFORM_URL -v # must specify --additional-urls here
+              echo -e "arduino-cli core update-index $PLATFORM_URL_COMMAND $PLATFORM_URL --verbose"
+              arduino-cli core update-index $PLATFORM_URL_COMMAND $PLATFORM_URL --verbose # must specify --additional-urls here
               echo -e "arduino-cli core install $single_platform $PLATFORM_URL_COMMAND $PLATFORM_URL -v"
-              arduino-cli core install $single_platform $PLATFORM_URL_COMMAND $PLATFORM_URL -v
+              arduino-cli core install $single_platform $PLATFORM_URL_COMMAND $PLATFORM_URL --verbose
             else
               echo -e "arduino-cli core update-index $PLATFORM_URL_COMMAND $PLATFORM_URL > /dev/null"
               arduino-cli core update-index $PLATFORM_URL_COMMAND $PLATFORM_URL > /dev/null # must specify --additional-urls here
@@ -184,10 +189,10 @@ jobs:
       - name: List installed boards with their FQBN
         # ls -l $HOME/.arduino15/packages/ # I see only arduino and one of the Attiny cores but not all 3 together
         run: |
-          echo -e "\n\n"$YELLOW"List installed boards with their FQBN"
+          echo -e "\n\n"${YELLOW}List installed boards with their FQBN
           if [[ $DEBUG_INSTALL == true ]]; then
-            echo arduino-cli board listall -v
-            arduino-cli board listall -v
+            echo arduino-cli board listall --verbose
+            arduino-cli board listall --verbose
           else
             echo arduino-cli board listall
             arduino-cli board listall
@@ -195,20 +200,23 @@ jobs:
 
       - name: Install required libraries
         run: |
-          echo -e "\n"$YELLOW"Install required libraries"
+          echo -e "\n"${YELLOW}Install required libraries
           if [[ -z $REQUIRED_LIBRARIES ]]; then
-            echo "No additional libraries to install"
+            echo No additional libraries to install
           else
-            echo "Install libraries $REQUIRED_LIBRARIES"
+            echo Install libraries $REQUIRED_LIBRARIES
             BACKUP_IFS="$IFS"
             # Split comma separated library list
             IFS=$','
             declare -a REQUIRED_LIBRARIES_ARRAY=( $REQUIRED_LIBRARIES )
             IFS="$BACKUP_IFS"
-            echo "Install single library ${REQUIRED_LIBRARIES_ARRAY[@]}"
-            arduino-cli lib install "${REQUIRED_LIBRARIES_ARRAY[@]}"
+            if [[ $DEBUG_INSTALL == true ]]; then
+              arduino-cli lib install "${REQUIRED_LIBRARIES_ARRAY[@]}"
+            else
+              arduino-cli lib install "${REQUIRED_LIBRARIES_ARRAY[@]}" >/dev/null 2>&1
+            fi
             if [[ $? -ne 0 ]]; then
-              echo "::error::Installation of "$REQUIRED_LIBRARIES" failed"
+              echo "::error::Installation of $REQUIRED_LIBRARIES failed"
               exit 1
             fi
           fi
@@ -220,18 +228,20 @@ jobs:
           SKETCH_NAMES: ${{ matrix.sketch-names }}
         run: |
           if [[ -z $SKETCH_NAMES ]]; then echo -e "Set SKETCH_NAMES to default value: \"*.ino\""; SKETCH_NAMES='*.ino'; fi
-          echo -e "\n"$YELLOW"Compiling sketches / examples for board $ARDUINO_BOARD_FQBN \n"
+          echo SKETCH_NAMES="$SKETCH_NAMES"
+
+          echo -e "\n"${YELLOW}Compiling sketches / examples for board $ARDUINO_BOARD_FQBN "\n"
+
           # If matrix.examples-build-properties are specified, create an associative shell array
           if [[ -n $EXAMPLES_BUILD_PROPERTIES && $EXAMPLES_BUILD_PROPERTIES != "null" ]]; then # contains "null", if passed as environment variable
             echo EXAMPLES_BUILD_PROPERTIES=$EXAMPLES_BUILD_PROPERTIES
             EXAMPLES_BUILD_PROPERTIES=${EXAMPLES_BUILD_PROPERTIES#\{} # remove the "{". The "}" is required as end token
+            # (\w*): * first token before the colon and spaces, ([^,}]*) token after colon and spaces up to "," or "}", [,}] trailing characters
             declare -A PROP_MAP="( $(echo $EXAMPLES_BUILD_PROPERTIES | sed -E 's/"(\w*)": *([^,}]*)[,}]/\[\1\]=\2/g' ) )"
             declare -p PROP_MAP # print properties of PROP_MAP
           else
-            declare -A PROP_MAP=( [dummy]=dummy )
+            declare -A PROP_MAP=( [dummy]=dummy ) # declare an accociative array
           fi
-
-          echo SKETCH_NAMES="$SKETCH_NAMES"
 
           #
           # Finally, we compile all examples
@@ -239,14 +249,15 @@ jobs:
           # Split comma separated sketch name list
           BACKUP_IFS="$IFS"
           IFS=$','
-          SKETCH_NAMES=${SKETCH_NAMES// /} # Replace all spaces
+          SKETCH_NAMES=${SKETCH_NAMES// /} # replace all spaces
           GLOBIGNORE=*:?:[ # Disable filename expansion (globbing) of *.ino to abc.ino if abc.ino is a file in the directory
           declare -a SKETCH_NAMES_ARRAY=( $SKETCH_NAMES ) # declare an indexed array
           GLOBIGNORE= # Enable it for cp command below
           if [[ $DEBUG_COMPILE == true ]]; then
-            declare -p SKETCH_NAMES_ARRAY
+            declare -p SKETCH_NAMES_ARRAY # print properties of SKETCH_NAMES_ARRAY
           fi
           IFS="$BACKUP_IFS"
+          COMPILED_SKETCHES=
           for sketch_name in "${SKETCH_NAMES_ARRAY[@]}"; do # Loop over all sketch names
             # must use $PWD/$SKETCH_NAMES_FIND_START, since arduino-cli does not support relative path for --build-path
             declare -a SKETCHES=($(find ${PWD}/${SKETCH_NAMES_FIND_START} -type f -name "$sketch_name")) # only search for files
@@ -271,7 +282,7 @@ jobs:
                 if [[ $SKETCH_DIR != $SKETCH_BASENAME ]]; then
                   mkdir $HOME/$SKETCH_BASENAME
                   echo "Creating directory $HOME/$SKETCH_BASENAME and copy ${SKETCH_PATH}/* to it"
-                  cp -R ${SKETCH_PATH}/* $HOME/$SKETCH_BASENAME
+                  cp --recursive ${SKETCH_PATH}/* $HOME/$SKETCH_BASENAME
                   SKETCH_PATH=$HOME/$SKETCH_BASENAME
                 fi
                 # Check if there is an entry in the associative array and create compile parameter to put in compiler.*.extra_flags
@@ -294,21 +305,21 @@ jobs:
                 fi
                 if [[ $? -ne 0 ]]; then
                   echo -e ""$RED"\xe2\x9c\x96" # If ok output a green checkmark else a red X and the command output.
-                if [[ -z $GCC_EXTRA_FLAGS ]]; then
-                  echo "arduino-cli compile --verbose --warnings all --fqbn ${ARDUINO_BOARD_FQBN%|*} --build-path $SKETCH_PATH $SKETCH_PATH"
-                else
-                  echo "arduino-cli compile --verbose --warnings all --fqbn ${ARDUINO_BOARD_FQBN%|*} --build-path $SKETCH_PATH --build-properties compiler.cpp.extra_flags=\"${GCC_EXTRA_FLAGS}\" --build-properties compiler.c.extra_flags=\"${GCC_EXTRA_FLAGS}\" --build-properties compiler.S.extra_flags=\"${GCC_EXTRA_FLAGS}\" $SKETCH_PATH"
-                fi
+                  if [[ -z $GCC_EXTRA_FLAGS ]]; then
+                    echo "arduino-cli compile --verbose --warnings all --fqbn ${ARDUINO_BOARD_FQBN%|*} --build-path $SKETCH_PATH $SKETCH_PATH"
+                  else
+                    echo "arduino-cli compile --verbose --warnings all --fqbn ${ARDUINO_BOARD_FQBN%|*} --build-path $SKETCH_PATH --build-properties compiler.cpp.extra_flags=\"${GCC_EXTRA_FLAGS}\" --build-properties compiler.c.extra_flags=\"${GCC_EXTRA_FLAGS}\" --build-properties compiler.S.extra_flags=\"${GCC_EXTRA_FLAGS}\" $SKETCH_PATH"
+                  fi
                   echo "::error::Compile of  $SKETCH_BASENAME ${GCC_EXTRA_FLAGS} failed"
                   echo -e "$build_stdout \n"
                   exit_code=1
                 else
                   echo -e ""$GREEN"\xe2\x9c\x93"
-                if [[ -z $GCC_EXTRA_FLAGS ]]; then
-                  echo "arduino-cli compile --verbose --warnings all --fqbn ${ARDUINO_BOARD_FQBN%|*} --build-path $SKETCH_PATH $SKETCH_PATH"
-                else
-                  echo "arduino-cli compile --verbose --warnings all --fqbn ${ARDUINO_BOARD_FQBN%|*} --build-path $SKETCH_PATH --build-properties compiler.cpp.extra_flags=\"${GCC_EXTRA_FLAGS}\" --build-properties compiler.c.extra_flags=\"${GCC_EXTRA_FLAGS}\" --build-properties compiler.S.extra_flags=\"${GCC_EXTRA_FLAGS}\" $SKETCH_PATH"
-                fi
+                  if [[ -z $GCC_EXTRA_FLAGS ]]; then
+                    echo "arduino-cli compile --verbose --warnings all --fqbn ${ARDUINO_BOARD_FQBN%|*} --build-path $SKETCH_PATH $SKETCH_PATH"
+                  else
+                    echo "arduino-cli compile --verbose --warnings all --fqbn ${ARDUINO_BOARD_FQBN%|*} --build-path $SKETCH_PATH --build-properties compiler.cpp.extra_flags=\"${GCC_EXTRA_FLAGS}\" --build-properties compiler.c.extra_flags=\"${GCC_EXTRA_FLAGS}\" --build-properties compiler.S.extra_flags=\"${GCC_EXTRA_FLAGS}\" $SKETCH_PATH"
+                  fi
                   if [[ $DEBUG_COMPILE == true ]]; then
                     echo "Debug mode enabled => compile output will be printed also for successful compilation and sketch directory is listed after compilation"
                     echo -e "$build_stdout \n"
@@ -316,8 +327,13 @@ jobs:
                     ls -l $SKETCH_PATH
                   fi
                 fi
+                COMPILED_SKETCHES="$COMPILED_SKETCHES $SKETCH_NAME"
               fi
             done
           done
+          if [ -z "$COMPILED_SKETCHES" ]; then
+            echo "::error::Did not find any sketches to compile, probably misconfigured?"
+            exit_code=1
+          fi
           exit $exit_code
         shell: bash {0} # Needed to avoid an exit at first error
