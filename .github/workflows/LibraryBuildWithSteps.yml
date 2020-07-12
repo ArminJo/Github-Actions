@@ -68,7 +68,8 @@ jobs:
 
           - arduino-boards-fqbn: digistump:avr:digispark-tiny1  # ATtiny85 board @1 MHz
             platform-url: https://raw.githubusercontent.com/ArminJo/DigistumpArduino/master/package_digistump_index.json
-            sketch-names: WhistleSwitch.ino,SimpleFrequencyDetector.ino,50Hz # Comma separated list of sketch names (no path required) or patterns to use in build
+#            sketch-names: WhistleSwitch.ino,SimpleFrequencyDetector.ino,50Hz # Comma separated list of sketch names (no path required) or patterns to use in build
+            sketch-names: Whistle.ino # Comma separated list of sketch names (no path required) or patterns to use in build
 
           - arduino-boards-fqbn: ATTinyCore:avr:attinyx5:chip=85,clock=1internal
             platform-url: http://drazzy.com/package_drazzy.com_index.json
@@ -99,6 +100,14 @@ jobs:
 
       - name: Add *Custom* directories to Arduino library directory
         run: |
+          if [[ $DEBUG_INSTALL == true ]]; then
+            echo HOME=$HOME # /github/home
+            echo PWD=$PWD # /github/workspace
+            echo GITHUB_WORKSPACE=$GITHUB_WORKSPACE # /github/workspace
+            #set
+            #ls -lR $GITHUB_WORKSPACE
+          fi
+
           if ls $GITHUB_WORKSPACE/*Custom* >/dev/null 2>&1; then
             echo -e "\n\n"${YELLOW}Add *Custom* as Arduino library
             mkdir --parents $HOME/Arduino/libraries
@@ -115,11 +124,13 @@ jobs:
 
       - name: Link this repository as Arduino library
         run: |
+          # Check if repo is an Arduino library
           if [[ -f $GITHUB_WORKSPACE/library.properties ]]; then
             echo -e "\n\n"${YELLOW}Link this repository as Arduino library
             mkdir --parents $HOME/Arduino/libraries
             ln --symbolic $GITHUB_WORKSPACE $HOME/Arduino/libraries/.
             if [[ $DEBUG_INSTALL == true ]]; then
+             echo ln --symbolic $GITHUB_WORKSPACE $HOME/Arduino/libraries/.
              echo ls -l --dereference --recursive --all $HOME/Arduino/libraries/
              ls -l --dereference --recursive --all $HOME/Arduino/libraries/
             fi
@@ -266,6 +277,18 @@ jobs:
               declare -p SKETCHES
             fi
 
+            # Check if find command found a file
+            if [[ -z ${SKETCHES[0]} ]]; then
+              GLOBIGNORE=*:?:[
+              echo No files found to compile with sketch-names=${SKETCH_NAMES} and sketch-names-find-start=${SKETCH_NAMES_FIND_START}
+              GLOBIGNORE=
+              # No files found -> list start directory and execute find command to see what we did
+              echo -e "find command is: find ${PWD}/${SKETCH_NAMES_FIND_START} -type f -name \"$sketch_name\""
+              echo "\"sketch-names-find-start\" directory content listing with: ls -l ${PWD}/${SKETCH_NAMES_FIND_START}"
+              ls -l ${PWD}/${SKETCH_NAMES_FIND_START}
+              echo
+            fi
+
             for sketch in "${SKETCHES[@]}"; do # Loop over all sketch files
               SKETCH_PATH=$(dirname $sketch) # complete path to sketch
               SKETCH_DIR=${SKETCH_PATH##*/}  # directory of sketch, must match sketch basename
@@ -338,8 +361,8 @@ jobs:
             done
           done
           if [ -z "$COMPILED_SKETCHES" ]; then
-            echo "::error::Did not find any sketches to compile, probably misconfigured?"
-            exit_code=1
+            echo "::error::Did not find any sketches to compile, probably misconfigured or used checkout twice without path: parameter?"
+            exit_code=2
           fi
           exit $exit_code
         shell: bash {0} # Needed to avoid an exit at first error
