@@ -28,7 +28,7 @@ jobs:
       # Comma separated list without double quotes around the list.
       REQUIRED_LIBRARIES: ATtinySerialOut
       SKETCH_NAMES_FIND_START: .
-      SAVE_GENERATED_FILES: true
+#      SET_BUILD_PATH: true
       DEBUG_INSTALL: true
       DEBUG_COMPILE: true
 
@@ -68,8 +68,8 @@ jobs:
 
           - arduino-boards-fqbn: digistump:avr:digispark-tiny1  # ATtiny85 board @1 MHz
             platform-url: https://raw.githubusercontent.com/ArminJo/DigistumpArduino/master/package_digistump_index.json
-#            sketch-names: WhistleSwitch.ino,SimpleFrequencyDetector.ino,50Hz # Comma separated list of sketch names (no path required) or patterns to use in build
-            sketch-names: Whistle.ino # Comma separated list of sketch names (no path required) or patterns to use in build
+            sketch-names: WhistleSwitch.ino,SimpleFrequencyDetector.ino,50Hz # Comma separated list of sketch names (no path required) or patterns to use in build
+#            sketch-names: Whistle.ino # Comma separated list of sketch names (no path required) or patterns to use in build
 
           - arduino-boards-fqbn: ATTinyCore:avr:attinyx5:chip=85,clock=1internal
             platform-url: http://drazzy.com/package_drazzy.com_index.json
@@ -98,16 +98,20 @@ jobs:
       # echo PWD=$PWD # /home/runner/work/Github-Actions-Test/Github-Actions-Test
       # which arduino-cli # /opt/hostedtoolcache/arduino-cli/0.9.0/x64/arduino-cli
 
-      - name: Add *Custom* directories to Arduino library directory
+      - name: Print version
         run: |
+          #print version
+          arduino-cli version
           if [[ $DEBUG_INSTALL == true ]]; then
-            echo HOME=$HOME # /github/home
-            echo PWD=$PWD # /github/workspace
-            echo GITHUB_WORKSPACE=$GITHUB_WORKSPACE # /github/workspace
+            echo HOME=$HOME # /home/runner if script, /github/home if action
+            echo PWD=$PWD # /home/runner/work/Github-Actions-Test/Github-Actions-Test if script, /github/workspace if action
+            echo GITHUB_WORKSPACE=$GITHUB_WORKSPACE # /home/runner/work/Github-Actions/Github-Actions if script, /github/workspace if action
             #set
             #ls -lR $GITHUB_WORKSPACE
           fi
 
+      - name: Add *Custom* directories to Arduino library directory
+        run: |
           if ls $GITHUB_WORKSPACE/*Custom* >/dev/null 2>&1; then
             echo -e "\n\n"${YELLOW}Add *Custom* as Arduino library
             mkdir --parents $HOME/Arduino/libraries
@@ -271,8 +275,12 @@ jobs:
           IFS="$BACKUP_IFS"
           COMPILED_SKETCHES=
           for sketch_name in "${SKETCH_NAMES_ARRAY[@]}"; do # Loop over all sketch names
-            # must use $PWD/$SKETCH_NAMES_FIND_START, since arduino-cli does not support relative path for --build-path
-            declare -a SKETCHES=($(find ${PWD}/${SKETCH_NAMES_FIND_START} -type f -name "$sketch_name")) # only search for files
+            if [[ $SET_BUILD_PATH == true ]]; then
+            # must use $GITHUB_WORKSPACE/$SKETCH_NAMES_FIND_START, since arduino-cli does not support relative path for --build-path
+              declare -a SKETCHES=($(find ${GITHUB_WORKSPACE}/${SKETCH_NAMES_FIND_START} -type f -name "$sketch_name")) # only search for files
+            else
+              declare -a SKETCHES=($(find ${SKETCH_NAMES_FIND_START} -type f -name "$sketch_name")) # only search for files
+            fi
             if [[ $DEBUG_COMPILE == true ]]; then
               declare -p SKETCHES
             fi
@@ -310,8 +318,8 @@ jobs:
                   cp --recursive ${SKETCH_PATH}/* $HOME/$SKETCH_BASENAME
                   SKETCH_PATH=$HOME/$SKETCH_BASENAME
                 fi
-                if [[ $SAVE_GENERATED_FILES == true ]]; then
-                  BUILD_PATH_PARAMETER="--build-path $SKETCH_PATH"
+                if [[ $SET_BUILD_PATH == true ]]; then
+                  BUILD_PATH_PARAMETER="--build-path $SKETCH_PATH/build"
                 fi
                 # Check if there is an entry in the associative array and create compile parameter to put in compiler.*.extra_flags
                 # This flags are also defined in platform.txt as empty, to be overwritten by a platform.local.txt definition.
@@ -348,11 +356,11 @@ jobs:
                   else
                     echo "arduino-cli compile --verbose --warnings all --fqbn ${ARDUINO_BOARD_FQBN%|*} $BUILD_PATH_PARAMETER --build-properties compiler.cpp.extra_flags=\"${GCC_EXTRA_FLAGS}\" --build-properties compiler.c.extra_flags=\"${GCC_EXTRA_FLAGS}\" --build-properties compiler.S.extra_flags=\"${GCC_EXTRA_FLAGS}\" $SKETCH_PATH"
                   fi
-                  if [[ $DEBUG_COMPILE == true || $SAVE_GENERATED_FILES == true ]]; then
+                  if [[ $DEBUG_COMPILE == true || $SET_BUILD_PATH == true ]]; then
                     echo "Debug mode enabled => compile output will be printed also for successful compilation and sketch directory is listed after compilation"
                     echo -e "$build_stdout \n"
-                    echo -e "\nls -l $SKETCH_PATH"
-                    ls -l $SKETCH_PATH
+                    echo -e "\nls -l --recursive $SKETCH_PATH/build/"
+                    ls -l --recursive $SKETCH_PATH/build/
                     echo -e "\n\n"
                   fi
                 fi
@@ -361,7 +369,7 @@ jobs:
             done
           done
           if [ -z "$COMPILED_SKETCHES" ]; then
-            echo "::error::Did not find any sketches to compile, probably misconfigured or used checkout twice without path: parameter?"
+            echo "::error::Did not find any sketches to compile, probably misconfigured or used checkout twice without \"path:\" parameter?"
             exit_code=2
           fi
           exit $exit_code
