@@ -254,10 +254,15 @@ jobs:
           echo -e "\n"${YELLOW}Compiling sketches / examples for board $ARDUINO_BOARD_FQBN "\n"
 
           # If matrix.examples-build-properties are specified, create an associative shell array
+          # Input example: { "WhistleSwitch": "-DINFO -DFREQUENCY_RANGE_LOW", "SimpleFrequencyDetector": "-DINFO" }
+          # Converted to: [All]="-DDEBUG -DINFO" [WhistleSwitch]="-DDEBUG -DINFO"
           if [[ -n $EXAMPLES_BUILD_PROPERTIES && $EXAMPLES_BUILD_PROPERTIES != "null" ]]; then # contains "null", if passed as environment variable
             echo EXAMPLES_BUILD_PROPERTIES=$EXAMPLES_BUILD_PROPERTIES
             EXAMPLES_BUILD_PROPERTIES=${EXAMPLES_BUILD_PROPERTIES#\{} # remove the "{". The "}" is required as end token
             # (\w*): * first token before the colon and spaces, ([^,}]*) token after colon and spaces up to "," or "}", [,}] trailing characters
+            if [[ $DEBUG_COMPILE == true ]]; then
+              echo EXAMPLES_BUILD_PROPERTIES is converted to:$(echo $EXAMPLES_BUILD_PROPERTIES | sed -E 's/"(\w*)": *([^,}]*)[,}]/\[\1\]=\2/g')
+            fi
             declare -A PROP_MAP="( $(echo $EXAMPLES_BUILD_PROPERTIES | sed -E 's/"(\w*)": *([^,}]*)[,}]/\[\1\]=\2/g' ) )"
             declare -p PROP_MAP # print properties of PROP_MAP
           else

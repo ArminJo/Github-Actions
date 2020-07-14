@@ -49,11 +49,11 @@ jobs:
         #############################################################################################################
         arduino-boards-fqbn:
           - arduino:avr:uno
-          - arduino:avr:uno|trace
-          - digistump:avr:digispark-tiny1
-          - ATTinyCore:avr:attinyx5:chip=85,clock=1internal
-          - esp8266:esp8266:huzzah:eesz=4M3M,xtal=80
-          - esp32:esp32:featheresp32:FlashFreq=80
+#          - arduino:avr:uno|trace
+#          - digistump:avr:digispark-tiny1
+#          - ATTinyCore:avr:attinyx5:chip=85,clock=1internal
+#          - esp8266:esp8266:huzzah:eesz=4M3M,xtal=80
+#          - esp32:esp32:featheresp32:FlashFreq=80
 
         # Specify parameters for each board.
         # Parameters can be: examples-exclude and examples-build-properties
@@ -68,36 +68,41 @@ jobs:
               SimpleFrequencyDetector:
                 -DINFO
 
-          - arduino-boards-fqbn: arduino:avr:uno|trace # UNO board with different build properties
-            sketch-names: \*.ino # is default setting
-            examples-exclude: 50Hz # Comma separated list of (unique substrings of) example names to exclude in build
-            examples-build-properties:
-              WhistleSwitch:
-                -DDEBUG
-                -DTRACE
+#          - arduino-boards-fqbn: arduino:avr:uno|trace # UNO board with different build properties
+#            sketch-names: \*.ino # is default setting
+#            examples-exclude: 50Hz # Comma separated list of (unique substrings of) example names to exclude in build
+#            examples-build-properties:
+#              WhistleSwitch:
+#                -DDEBUG
+#                -DTRACE
 
-          - arduino-boards-fqbn: digistump:avr:digispark-tiny1  # ATtiny85 board @1 MHz
-            platform-url: https://raw.githubusercontent.com/ArminJo/DigistumpArduino/master/package_digistump_index.json
-            examples-exclude: WhistleSwitch,"Blink" # Comma separated list of (unique substrings of) example names to exclude in build
-            examples-build-properties:
-              WhistleSwitch:
-                -DDEBUG
-                -DTRACE
+#          - arduino-boards-fqbn: digistump:avr:digispark-tiny1  # ATtiny85 board @1 MHz
+#            platform-url: https://raw.githubusercontent.com/ArminJo/DigistumpArduino/master/package_digistump_index.json
+#            examples-exclude: WhistleSwitch,"Blink" # Comma separated list of (unique substrings of) example names to exclude in build
+#            examples-build-properties:
+#              WhistleSwitch:
+#                -DDEBUG
+#                -DTRACE
 
-          - arduino-boards-fqbn: ATTinyCore:avr:attinyx5:chip=85,clock=1internal
-            platform-url: http://drazzy.com/package_drazzy.com_index.json
-            sketch-names: "*.ino,WhistleSwitch.ino"
-            examples-build-properties:
-              WhistleSwitch:
-                -DFREQUENCY_RANGE_LOW
+#          - arduino-boards-fqbn: ATTinyCore:avr:attinyx5:chip=85,clock=1internal
+#            platform-url: http://drazzy.com/package_drazzy.com_index.json
+#            sketch-names: "*.ino,WhistleSwitch.ino"
+#            examples-build-properties:
+#              WhistleSwitch:
+#                -DFREQUENCY_RANGE_LOW
 
-          - arduino-boards-fqbn: esp8266:esp8266:huzzah:eesz=4M3M,xtal=80
-            platform-url: https://arduino.esp8266.com/stable/package_esp8266com_index.json
-            examples-exclude: WhistleSwitch,50Hz SimpleFrequencyDetector,Blink
+#          - arduino-boards-fqbn: esp8266:esp8266:huzzah:eesz=4M3M,xtal=80
+#            platform-url: https://arduino.esp8266.com/stable/package_esp8266com_index.json
+#            examples-exclude: WhistleSwitch,50Hz SimpleFrequencyDetector,Blink
 
-          - arduino-boards-fqbn: esp32:esp32:featheresp32:FlashFreq=80
-            platform-url: https://dl.espressif.com/dl/package_esp32_index.json
-            examples-exclude: WhistleSwitch 50Hz,SimpleFrequencyDetector,Blink
+#          - arduino-boards-fqbn: esp32:esp32:featheresp32:FlashFreq=80
+#            platform-url: https://dl.espressif.com/dl/package_esp32_index.json
+#            examples-exclude: WhistleSwitch 50Hz,SimpleFrequencyDetector,Blink
+
+        log-options: [-DDEBUG, -DINFO]
+
+        other-options: [-DTEST, -DDUMMY]
+
 
 ######################################################
 # End of configuration, start of fixed script section
@@ -163,6 +168,8 @@ jobs:
         env:
           REQUIRED_LIBRARIES_ENV: ${{ env.REQUIRED_LIBRARIES }}
           EXAMPLES_EXCLUDE: ${{ toJson(matrix.examples-exclude) }} # the content as string in double quotes with escaped double quotes if one token contains one
+          MATRIX1: "All: ${{ matrix.log-options }} ${{ matrix.other-options }}"
+          MATRIX2: '{ "All": "${{ matrix.log-options }} ${{ matrix.other-options }}" }' #
         run: |
           echo PWD=$PWD # /home/runner/work/Github-Actions/Github-Actions
           ls -l $PWD
@@ -175,6 +182,8 @@ jobs:
           echo AGENT_TOOLSDIRECTORY=$AGENT_TOOLSDIRECTORY # /opt/hostedtoolcache
 
           echo "matrix.examples-build-properties=${{ toJson(matrix.examples-build-properties) }}"
+          echo "MATRIX1=${MATRIX1}
+          echo "MATRIX2=${MATRIX2}
 
           echo -e "\n\nREQUIRED_LIBRARIES test\n"
           # here all quotes are escaped leading to have "Adafruit NeoPixel" or 'Adafruit NeoPixel' as 2 tokens each

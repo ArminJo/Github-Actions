@@ -20,7 +20,7 @@ on:
 
 jobs:
   build:
-    name: ${{ matrix.arduino-boards-fqbn }} - test compiling examples
+    name: ${{ matrix.arduino-boards-fqbn }} ${{ matrix.log-options }} ${{ matrix.other-options }}
 
     runs-on: ubuntu-18.04 # I picked Ubuntu to use shell scripts.
 
@@ -42,19 +42,24 @@ jobs:
         #############################################################################################################
         arduino-boards-fqbn:
           - arduino:avr:uno
-          - digistump:avr:digispark-tiny1
-          - ATTinyCore:avr:attinyx5:chip=85,clock=1internal
+#          - digistump:avr:digispark-tiny1
+#          - ATTinyCore:avr:attinyx5:chip=85,clock=1internal
 
         # Specify parameters for each board.
         # With examples-exclude you may exclude specific examples for a board. Use a comma separated list.
         #############################################################################################################
-        include:
-          - arduino-boards-fqbn: digistump:avr:digispark-tiny1  # ATtiny85 board @1 MHz
-            platform-url: https://raw.githubusercontent.com/ArminJo/DigistumpArduino/master/package_digistump_index.json
-            examples-exclude: Blink
+#        include:
+#          - arduino-boards-fqbn: digistump:avr:digispark-tiny1  # ATtiny85 board @1 MHz
+#            platform-url: https://raw.githubusercontent.com/ArminJo/DigistumpArduino/master/package_digistump_index.json
+#            examples-exclude: Blink
 
-          - arduino-boards-fqbn: ATTinyCore:avr:attinyx5:chip=85,clock=1internal
-            platform-url: http://drazzy.com/package_drazzy.com_index.json
+#          - arduino-boards-fqbn: ATTinyCore:avr:attinyx5:chip=85,clock=1internal
+#            platform-url: http://drazzy.com/package_drazzy.com_index.json
+
+        log-options: [-DDEBUG, -DINFO]
+
+        other-options: [-DTEST, -DDUMMY]
+
 
       # Do not cancel all jobs / architectures if one job fails
       fail-fast: false
@@ -77,7 +82,9 @@ jobs:
           required-libraries: ${{ env.REQUIRED_LIBRARIES }}
           platform-url: ${{ matrix.platform-url }}
           examples-exclude: ${{ matrix.examples-exclude }}
-          examples-build-properties: '{ "WhistleSwitch": "-DINFO -DFREQUENCY_RANGE_LOW", "SimpleFrequencyDetector": "-DINFO" }'
+#          examples-build-properties: '{ "WhistleSwitch": "-DINFO -DFREQUENCY_RANGE_LOW", "SimpleFrequencyDetector": "-DINFO" }'
+#results in: EXAMPLES_BUILD_PROPERTIES={ "WhistleSwitch": "-DINFO -DFREQUENCY_RANGE_LOW", "SimpleFrequencyDetector": "-DINFO" }
+          examples-build-properties: '{ "All": "${{ matrix.log-options }} ${{ matrix.other-options }}" }'
           sketch-names:
             WhistleSwitch.ino,
             50Hz.ino,
