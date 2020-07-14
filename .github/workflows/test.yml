@@ -56,12 +56,12 @@ jobs:
 #          - esp32:esp32:featheresp32:FlashFreq=80
 
         # Specify parameters for each board.
-        # Parameters can be: examples-exclude and examples-build-properties
+        # Parameters can be: sketches-exclude and build-properties
         #############################################################################################################
         include:
           - arduino-boards-fqbn: arduino:avr:uno
             sketch-names: WhistleSwitch.ino,SimpleFrequencyDetector.ino # Comma separated list of sketch names (no path required) or patterns to use in build
-            examples-build-properties:
+            build-properties:
               WhistleSwitch:
                 -DDEBUG
                 -DFREQUENCY_RANGE_LOW
@@ -70,16 +70,16 @@ jobs:
 
 #          - arduino-boards-fqbn: arduino:avr:uno|trace # UNO board with different build properties
 #            sketch-names: \*.ino # is default setting
-#            examples-exclude: 50Hz # Comma separated list of (unique substrings of) example names to exclude in build
-#            examples-build-properties:
+#            sketches-exclude: 50Hz # Comma separated list of (unique substrings of) example names to exclude in build
+#            build-properties:
 #              WhistleSwitch:
 #                -DDEBUG
 #                -DTRACE
 
 #          - arduino-boards-fqbn: digistump:avr:digispark-tiny1  # ATtiny85 board @1 MHz
 #            platform-url: https://raw.githubusercontent.com/ArminJo/DigistumpArduino/master/package_digistump_index.json
-#            examples-exclude: WhistleSwitch,"Blink" # Comma separated list of (unique substrings of) example names to exclude in build
-#            examples-build-properties:
+#            sketches-exclude: WhistleSwitch,"Blink" # Comma separated list of (unique substrings of) example names to exclude in build
+#            build-properties:
 #              WhistleSwitch:
 #                -DDEBUG
 #                -DTRACE
@@ -87,17 +87,17 @@ jobs:
 #          - arduino-boards-fqbn: ATTinyCore:avr:attinyx5:chip=85,clock=1internal
 #            platform-url: http://drazzy.com/package_drazzy.com_index.json
 #            sketch-names: "*.ino,WhistleSwitch.ino"
-#            examples-build-properties:
+#            build-properties:
 #              WhistleSwitch:
 #                -DFREQUENCY_RANGE_LOW
 
 #          - arduino-boards-fqbn: esp8266:esp8266:huzzah:eesz=4M3M,xtal=80
 #            platform-url: https://arduino.esp8266.com/stable/package_esp8266com_index.json
-#            examples-exclude: WhistleSwitch,50Hz SimpleFrequencyDetector,Blink
+#            sketches-exclude: WhistleSwitch,50Hz SimpleFrequencyDetector,Blink
 
 #          - arduino-boards-fqbn: esp32:esp32:featheresp32:FlashFreq=80
 #            platform-url: https://dl.espressif.com/dl/package_esp32_index.json
-#            examples-exclude: WhistleSwitch 50Hz,SimpleFrequencyDetector,Blink
+#            sketches-exclude: WhistleSwitch 50Hz,SimpleFrequencyDetector,Blink
 
         log-options: [-DDEBUG, -DINFO]
 
@@ -167,7 +167,7 @@ jobs:
       - name: Dump variables
         env:
           REQUIRED_LIBRARIES_ENV: ${{ env.REQUIRED_LIBRARIES }}
-          EXAMPLES_EXCLUDE: ${{ toJson(matrix.examples-exclude) }} # the content as string in double quotes with escaped double quotes if one token contains one
+          EXAMPLES_EXCLUDE: ${{ toJson(matrix.sketches-exclude) }} # the content as string in double quotes with escaped double quotes if one token contains one
           MATRIX1: "All: ${{ matrix.log-options }} ${{ matrix.other-options }}"
           MATRIX2: '{ "All": "${{ matrix.log-options }} ${{ matrix.other-options }}" }' #
         run: |
@@ -181,7 +181,7 @@ jobs:
           echo RUNNER_TOOL_CACHE=$RUNNER_TOOL_CACHE # /opt/hostedtoolcache
           echo AGENT_TOOLSDIRECTORY=$AGENT_TOOLSDIRECTORY # /opt/hostedtoolcache
 
-          echo "matrix.examples-build-properties=${{ toJson(matrix.examples-build-properties) }}"
+          echo "matrix.build-properties=${{ toJson(matrix.build-properties) }}"
           echo "MATRIX1=${MATRIX1}
           echo "MATRIX2=${MATRIX2}
 
@@ -204,9 +204,9 @@ jobs:
           # This gives always one array element!
           # 1 line WhistleSwitch Test (without double quotes) give WhistleSwitch Test as one array element!
           # 2 lines WhistleSwitch + "Test" give WhistleSwitch "Test" also as one array element!
-          echo toJson\(matrix.examples-exclude\)=${{ toJson(matrix.examples-exclude) }} # gives WhistleSwitch Test or WhistleSwitch "Test"
-          echo toJson\(matrix.examples-exclude\) array=
-          for word in ${{ toJson(matrix.examples-exclude) }}; do
+          echo toJson\(matrix.sketches-exclude\)=${{ toJson(matrix.sketches-exclude) }} # gives WhistleSwitch Test or WhistleSwitch "Test"
+          echo toJson\(matrix.sketches-exclude\) array=
+          for word in ${{ toJson(matrix.sketches-exclude) }}; do
             echo $word
           done
           echo set=
@@ -214,7 +214,7 @@ jobs:
 
       - name: Connvert matrix to assoc array
         env:
-          BUILD_PROPERTIES: ${{ toJson(matrix.examples-build-properties) }}
+          BUILD_PROPERTIES: ${{ toJson(matrix.build-properties) }}
         run: |
           echo BUILD_PROPERTIES=$BUILD_PROPERTIES
           BUILD_PROPERTIES=${BUILD_PROPERTIES#\{} # remove "{"

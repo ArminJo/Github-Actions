@@ -42,16 +42,16 @@ jobs:
         #############################################################################################################
         arduino-boards-fqbn:
           - arduino:avr:uno
-#          - digistump:avr:digispark-tiny1
+#          - digistump:avr:digispark-tiny:clock=clock1
 #          - ATTinyCore:avr:attinyx5:chip=85,clock=1internal
 
         # Specify parameters for each board.
-        # With examples-exclude you may exclude specific examples for a board. Use a comma separated list.
+        # With sketches-exclude you may exclude specific examples for a board. Use a comma separated list.
         #############################################################################################################
 #        include:
-#          - arduino-boards-fqbn: digistump:avr:digispark-tiny1  # ATtiny85 board @1 MHz
+#          - arduino-boards-fqbn: digistump:avr:digispark-tiny:clock=clock1  # ATtiny85 board @1 MHz
 #            platform-url: https://raw.githubusercontent.com/ArminJo/DigistumpArduino/master/package_digistump_index.json
-#            examples-exclude: Blink
+#            sketches-exclude: Blink
 
 #          - arduino-boards-fqbn: ATTinyCore:avr:attinyx5:chip=85,clock=1internal
 #            platform-url: http://drazzy.com/package_drazzy.com_index.json
@@ -81,10 +81,10 @@ jobs:
           arduino-board-fqbn: ${{ matrix.arduino-boards-fqbn }}
           required-libraries: ${{ env.REQUIRED_LIBRARIES }}
           platform-url: ${{ matrix.platform-url }}
-          examples-exclude: ${{ matrix.examples-exclude }}
-#          examples-build-properties: '{ "WhistleSwitch": "-DINFO -DFREQUENCY_RANGE_LOW", "SimpleFrequencyDetector": "-DINFO" }'
-#results in: EXAMPLES_BUILD_PROPERTIES={ "WhistleSwitch": "-DINFO -DFREQUENCY_RANGE_LOW", "SimpleFrequencyDetector": "-DINFO" }
-          examples-build-properties: '{ "All": "${{ matrix.log-options }} ${{ matrix.other-options }}" }'
+          sketches-exclude: ${{ matrix.sketches-exclude }}
+#          build-properties: '{ "WhistleSwitch": "-DINFO -DFREQUENCY_RANGE_LOW", "SimpleFrequencyDetector": "-DINFO" }'
+#results in: BUILD_PROPERTIES={ "WhistleSwitch": "-DINFO -DFREQUENCY_RANGE_LOW", "SimpleFrequencyDetector": "-DINFO" }
+          build-properties: '{ "All": "${{ matrix.log-options }} ${{ matrix.other-options }}" }'
           sketch-names:
             WhistleSwitch.ino,
             50Hz.ino,

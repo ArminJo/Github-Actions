@@ -53,20 +53,20 @@ jobs:
         arduino-boards-fqbn:
           - arduino:avr:uno
           - arduino:avr:uno|All-DEBUG
-          - digistump:avr:digispark-tiny1
+          - digistump:avr:digispark-tiny:clock=clock1
           - ATTinyCore:avr:attinyx5:chip=85,clock=1internal
 
         # Specify parameters for each board.
-        # With examples-exclude you may exclude specific examples for a board. Use a comma separated list.
+        # With sketches-exclude you may exclude specific examples for a board. Use a comma separated list.
         #############################################################################################################
         include:
           - arduino-boards-fqbn: arduino:avr:uno|All-DEBUG # UNO board with -DDEBUG for all examples
-            examples-exclude: 50Hz # Comma separated list of (unique substrings of) example names to exclude in build
-            examples-build-properties:
+            sketches-exclude: 50Hz # Comma separated list of (unique substrings of) example names to exclude in build
+            build-properties:
               All: -DDEBUG -DINFO
               WhistleSwitch: -DDEBUG -DINFO
 
-          - arduino-boards-fqbn: digistump:avr:digispark-tiny1  # ATtiny85 board @1 MHz
+          - arduino-boards-fqbn: digistump:avr:digispark-tiny:clock=clock1  # ATtiny85 board @1 MHz
             platform-url: https://raw.githubusercontent.com/ArminJo/DigistumpArduino/master/package_digistump_index.json
             sketch-names: WhistleSwitch.ino,SimpleFrequencyDetector.ino,50Hz # Comma separated list of sketch names (no path required) or patterns to use in build
 #            sketch-names: Whistle.ino # Comma separated list of sketch names (no path required) or patterns to use in build
@@ -245,25 +245,26 @@ jobs:
       - name: Compile all examples
         env:
           ARDUINO_BOARD_FQBN: ${{ matrix.arduino-boards-fqbn }}
-          EXAMPLES_BUILD_PROPERTIES: ${{ toJson(matrix.examples-build-properties) }}
+          BUILD_PROPERTIES: ${{ toJson(matrix.build-properties) }}
           SKETCH_NAMES: ${{ matrix.sketch-names }}
+          SKETCHES_EXCLUDE: ${{ matrix.sketches-exclude }}
         run: |
           if [[ -z $SKETCH_NAMES ]]; then echo -e "Set SKETCH_NAMES to default value: \"*.ino\""; SKETCH_NAMES='*.ino'; fi
           echo SKETCH_NAMES="$SKETCH_NAMES"
 
           echo -e "\n"${YELLOW}Compiling sketches / examples for board $ARDUINO_BOARD_FQBN "\n"
 
-          # If matrix.examples-build-properties are specified, create an associative shell array
+          # If matrix.build-properties are specified, create an associative shell array
           # Input example: { "WhistleSwitch": "-DINFO -DFREQUENCY_RANGE_LOW", "SimpleFrequencyDetector": "-DINFO" }
           # Converted to: [All]="-DDEBUG -DINFO" [WhistleSwitch]="-DDEBUG -DINFO"
-          if [[ -n $EXAMPLES_BUILD_PROPERTIES && $EXAMPLES_BUILD_PROPERTIES != "null" ]]; then # contains "null", if passed as environment variable
-            echo EXAMPLES_BUILD_PROPERTIES=$EXAMPLES_BUILD_PROPERTIES
-            EXAMPLES_BUILD_PROPERTIES=${EXAMPLES_BUILD_PROPERTIES#\{} # remove the "{". The "}" is required as end token
+          if [[ -n $BUILD_PROPERTIES && $BUILD_PROPERTIES != "null" ]]; then # contains "null", if passed as environment variable
+            echo BUILD_PROPERTIES=$BUILD_PROPERTIES
+            BUILD_PROPERTIES=${BUILD_PROPERTIES#\{} # remove the "{". The "}" is required as end token
             # (\w*): * first token before the colon and spaces, ([^,}]*) token after colon and spaces up to "," or "}", [,}] trailing characters
             if [[ $DEBUG_COMPILE == true ]]; then
-              echo EXAMPLES_BUILD_PROPERTIES is converted to:$(echo $EXAMPLES_BUILD_PROPERTIES | sed -E 's/"(\w*)": *([^,}]*)[,}]/\[\1\]=\2/g')
+              echo BUILD_PROPERTIES is converted to:$(echo $BUILD_PROPERTIES | sed -E 's/"(\w*)": *([^,}]*)[,}]/\[\1\]=\2/g')
             fi
-            declare -A PROP_MAP="( $(echo $EXAMPLES_BUILD_PROPERTIES | sed -E 's/"(\w*)": *([^,}]*)[,}]/\[\1\]=\2/g' ) )"
+            declare -A PROP_MAP="( $(echo $BUILD_PROPERTIES | sed -E 's/"(\w*)": *([^,}]*)[,}]/\[\1\]=\2/g' ) )"
             declare -p PROP_MAP # print properties of PROP_MAP
           else
             declare -A PROP_MAP=( [dummy]=dummy ) # declare an accociative array
@@ -313,7 +314,7 @@ jobs:
               SKETCH_FILENAME=$(basename $sketch) # complete name of sketch
               SKETCH_EXTENSION=${SKETCH_FILENAME##*.} # extension of sketch
               SKETCH_BASENAME=${SKETCH_FILENAME%%.*} # name wihout extension / basename of sketch, must match directory name
-              if [[ $EXAMPLES_EXCLUDE == *"$SKETCH_BASENAME"* ]]; then
+              if [[ $SKETCHES_EXCLUDE == *"$SKETCH_BASENAME"* ]]; then
                 echo -e "Skipping $SKETCH_BASENAME \xe2\x9e\x9e" # Right arrow
               else
                 # If sketch name does not end with .ino, rename it locally
