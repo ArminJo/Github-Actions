@@ -184,6 +184,11 @@ jobs:
             fi
           done
 
+          # Export PLATFORM for the next step
+          echo ::set-output name=PLATFORM:: $PLATFORM
+
+      - name: Special esp8266 and esp32 platform handling
+        run: |
           echo -e "\n\n"${YELLOW}Special esp8266 and esp32 platform handling
           if [[ ${PLATFORM} == esp8266:esp8266 && ! -f /usr/bin/python3 ]]; then
             # python3 is a link in the esp8266 package: /github/home/.arduino15/packages/esp8266/tools/python3/3.7.2-post1/python3 -> /usr/bin/python3
