@@ -90,9 +90,31 @@ jobs:
 
       # We use the `arduino/setup-arduino-cli` action to install and
       # configure the Arduino CLI on the system.
-      - name: Setup Arduino CLI
-        uses: arduino/setup-arduino-cli@v1.0.0
-
+      - name: Donload arduino-cli
+        run: |
+          # Download and install arduino IDE, if not already cached
+          echo -n -e "\n\n${YELLOW}arduino-cli "
+          if [[ -f $HOME/arduino_ide/arduino-cli ]]; then
+            echo -e "cached: ${GREEN}\xe2\x9c\x93" # never seen :-(
+          else
+            echo -n "downloading: "
+            wget --quiet https://downloads.arduino.cc/arduino-cli/arduino-cli_${CLI_VERSION}_Linux_64bit.tar.gz
+            if [[ $? -ne 0 ]]; then
+              echo -e "${RED}\xe2\x9c\x96"
+              echo "::error:: Unable to download arduino-cli_${CLI_VERSION}_Linux_64bit.tar.gz"
+              exit 3
+            else
+              echo -e "${GREEN}\xe2\x9c\x93"
+            fi
+            echo -n "Upacking arduino-cli to ${HOME}/arduino_ide:  "
+            if [[ ! -d $HOME/arduino_ide/ ]]; then
+              mkdir $HOME/arduino_ide
+            fi
+            tar xf arduino-cli_${CLI_VERSION}_Linux_64bit.tar.gz -C $HOME/arduino_ide/
+            if [[ $? -ne 0 ]]; then echo -e "${RED}\xe2\x9c\x96"; else echo -e "${GREEN}\xe2\x9c\x93"; fi
+          #  ls -l $HOME/arduino_ide/* # LICENSE.txt + arduino-cli
+          #  ls -l $HOME # only arduino_ide
+          fi
 
       # echo -e HOME=\"$HOME\" # /home/runner
       # echo PWD=$PWD # /home/runner/work/Github-Actions-Test/Github-Actions-Test
@@ -113,7 +135,7 @@ jobs:
       - name: Add *Custom* directories to Arduino library directory
         run: |
           if ls $GITHUB_WORKSPACE/*Custom* >/dev/null 2>&1; then
-            echo -e "\n\n"${YELLOW}Add *Custom* as Arduino library
+            echo -e "\n\n${YELLOW}Add *Custom* as Arduino library"
             mkdir --parents $HOME/Arduino/libraries
             rm --force --recursive $GITHUB_WORKSPACE/*Custom*/.git # do not want to move the whole .git directory
             # mv to avoid the library examples to be test compiled
@@ -130,7 +152,7 @@ jobs:
         run: |
           # Check if repo is an Arduino library
           if [[ -f $GITHUB_WORKSPACE/library.properties ]]; then
-            echo -e "\n\n"${YELLOW}Link this repository as Arduino library
+            echo -e "\n\n${YELLOW}Link this repository as Arduino library"
             mkdir --parents $HOME/Arduino/libraries
             ln --symbolic $GITHUB_WORKSPACE $HOME/Arduino/libraries/.
             if [[ $DEBUG_INSTALL == true ]]; then
@@ -146,7 +168,7 @@ jobs:
           PLATFORM_URL: ${{ matrix.platform-url}}
           ARDUINO_BOARD_FQBN: ${{ matrix.arduino-boards-fqbn }}
         run: |
-          echo -e "\n\n"${YELLOW}Update index and install the required board platform
+          echo -e "\n\n${YELLOW}Update index and install the required board platform"
           if [[ -z $ARDUINO_PLATFORM ]]; then
           # ARDUINO_PLATFORM is empty -> derive platform from the 2 first elements of the arduino-board-fqbn
             remainder=${ARDUINO_BOARD_FQBN#*:}
@@ -189,16 +211,16 @@ jobs:
 
       - name: Special esp8266 and esp32 platform handling
         run: |
-          echo -e "\n\n"${YELLOW}Special esp8266 and esp32 platform handling
+          echo -e "\n\n${YELLOW}Special esp8266 and esp32 platform handling"
           if [[ ${PLATFORM} == esp8266:esp8266 && ! -f /usr/bin/python3 ]]; then
             # python3 is a link in the esp8266 package: /github/home/.arduino15/packages/esp8266/tools/python3/3.7.2-post1/python3 -> /usr/bin/python3
-            echo -e "\n\n"${YELLOW}install python3 for ESP8266
+            echo -e "\n\n${YELLOW}install python3 for ESP8266"
             apt-get install -qq python3 > /dev/null
           fi
 
           if [[ $PLATFORM == esp32:esp32 ]]; then
             if [[ ! -f /usr/bin/pip && ! -f /usr/bin/python ]]; then
-              echo -e "\n\n"${YELLOW}install python and pip for ESP32
+              echo -e "\n\n${YELLOW}install python and pip for ESP32"
           # Here we would get the warning: The directory '/github/home/.cache/pip/http' or its parent directory is not owned by the current user and the cache has been disabled.
           #                                Please check the permissions and owner of that directory. If executing pip with sudo, you may want sudo's -H flag.
               apt-get install -qq python-pip > /dev/null 2>&1 # this installs also python
@@ -210,7 +232,7 @@ jobs:
       - name: List installed boards with their FQBN
         # ls -l $HOME/.arduino15/packages/ # I see only arduino and one of the Attiny cores but not all 3 together
         run: |
-          echo -e "\n\n"${YELLOW}List installed boards with their FQBN
+          echo -e "\n\n${YELLOW}List installed boards with their FQBN"
           if [[ $DEBUG_INSTALL == true ]]; then
             echo arduino-cli board listall --verbose
             arduino-cli board listall --verbose
@@ -221,7 +243,7 @@ jobs:
 
       - name: Install required libraries
         run: |
-          echo -e "\n"${YELLOW}Install required libraries
+          echo -e "\n${YELLOW}Install required libraries"
           if [[ -z $REQUIRED_LIBRARIES ]]; then
             echo No additional libraries to install
           else
@@ -252,7 +274,7 @@ jobs:
           if [[ -z $SKETCH_NAMES ]]; then echo -e "Set SKETCH_NAMES to default value: \"*.ino\""; SKETCH_NAMES='*.ino'; fi
           echo SKETCH_NAMES="$SKETCH_NAMES"
 
-          echo -e "\n"${YELLOW}Compiling sketches / examples for board $ARDUINO_BOARD_FQBN "\n"
+          echo -e "\n${YELLOW}Compiling sketches / examples for board $ARDUINO_BOARD_FQBN \n"
 
           # If matrix.build-properties are specified, create an associative shell array
           # Input example: { "WhistleSwitch": "-DINFO -DFREQUENCY_RANGE_LOW", "SimpleFrequencyDetector": "-DINFO" }
@@ -351,7 +373,7 @@ jobs:
                   build_stdout=$(arduino-cli compile --verbose --warnings all --fqbn ${ARDUINO_BOARD_FQBN%|*} $BUILD_PATH_PARAMETER --build-properties compiler.cpp.extra_flags="${GCC_EXTRA_FLAGS}" --build-properties compiler.c.extra_flags="${GCC_EXTRA_FLAGS}" --build-properties compiler.S.extra_flags="${GCC_EXTRA_FLAGS}" $SKETCH_PATH 2>&1)
                 fi
                 if [[ $? -ne 0 ]]; then
-                  echo -e ""$RED"\xe2\x9c\x96" # If ok output a green checkmark else a red X and the command output.
+                  echo -e "${RED}\xe2\x9c\x96" # If ok output a green checkmark else a red X and the command output.
                   if [[ -z $GCC_EXTRA_FLAGS ]]; then
                     echo "arduino-cli compile --verbose --warnings all --fqbn ${ARDUINO_BOARD_FQBN%|*} $BUILD_PATH_PARAMETER $SKETCH_PATH"
                   else
@@ -361,7 +383,7 @@ jobs:
                   echo -e "$build_stdout \n"
                   exit_code=1
                 else
-                  echo -e ""$GREEN"\xe2\x9c\x93"
+                  echo -e "${GREEN}\xe2\x9c\x93"
                   if [[ -z $GCC_EXTRA_FLAGS ]]; then
                     echo "arduino-cli compile --verbose --warnings all --fqbn ${ARDUINO_BOARD_FQBN%|*} $BUILD_PATH_PARAMETER $SKETCH_PATH"
                   else

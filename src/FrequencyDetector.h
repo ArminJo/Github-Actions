@@ -47,9 +47,6 @@
 
 #if defined(__AVR_ATtiny25__) || defined(__AVR_ATtiny45__) || defined(__AVR_ATtiny85__)
 #include "ATtinySerialOut.h" // Available as Arduino library and contained in WhistleSwitch example.
-#define SIGNAL_BUFFER_SIZE 100
-#else
-#define SIGNAL_BUFFER_SIZE NUMBER_OF_SAMPLES
 #endif
 
 // If enabled, store first input samples for printing to Arduino Plotter
@@ -59,6 +56,12 @@
 //#define PRINT_RESULTS_TO_SERIAL_PLOTTER
 #if defined(PRINT_INPUT_SIGNAL_TO_PLOTTER) && defined(PRINT_RESULTS_TO_SERIAL_PLOTTER)
 #error Please define only one of PRINT_INPUT_SIGNAL_TO_PLOTTER and PRINT_RESULTS_TO_SERIAL_PLOTTER
+#endif
+
+#if (RAMEND < 1000)
+#define SIGNAL_PLOTTER_BUFFER_SIZE 100 // ATtiny85 -> Store only start of signal in plotter buffer
+#else
+#define SIGNAL_PLOTTER_BUFFER_SIZE NUMBER_OF_SAMPLES // ATmega328 -> Can store complete signal in plotter buffer
 #endif
 
 //#define FREQUENCY_RANGE_LOW // use it for frequencies below approximately 500 Hz
@@ -80,7 +83,7 @@
  * FREQUENCY_RANGE_DEFAULT -> 52 usec/sample -> 75 to 2403 Hz with 1024 samples and 150 to 2403 Hz with 512 samples.
  * FREQUENCY_RANGE_LOW -> 104 usec/sample -> 38 to 1202 Hz with 1024 samples and 75 to 1202 Hz with 512 samples.
  */
-#define NUMBER_OF_SAMPLES 512
+#define NUMBER_OF_SAMPLES 512 // This does NOT occupy RAM, only (NUMBER_OF_SAMPLES / MIN_SAMPLES_PER_PERIOD) bytes are required.
 //#define NUMBER_OF_SAMPLES 1024
 
 /*
