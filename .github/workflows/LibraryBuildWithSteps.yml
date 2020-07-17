@@ -121,15 +121,20 @@ jobs:
           #  ls -l $HOME/arduino_ide/* # LICENSE.txt + arduino-cli
           #  ls -l $HOME # only arduino_ide
           fi
+
+          # Add the arduino CLI to our PATH
+          PATH="$HOME/arduino_ide:$PATH"
+          echo ::add-path::$HOME/arduino_ide
+          #print version
+          arduino-cli version
+
           # echo -e HOME=\"$HOME\" # /home/runner
           # echo PWD=$PWD # /home/runner/work/Github-Actions-Test/Github-Actions-Test
           # which arduino-cli # /opt/hostedtoolcache/arduino-cli/0.9.0/x64/arduino-cli
         shell: bash {0} # Needed to avoid an exit at first error
 
-      - name: Print version
+      - name: Print environment
         run: |
-          #print version
-          arduino-cli version
           if [[ $DEBUG_INSTALL == true ]]; then
             echo HOME=$HOME # /home/runner if script, /github/home if action
             echo PWD=$PWD # /home/runner/work/Github-Actions-Test/Github-Actions-Test if script, /github/workspace if action
@@ -213,7 +218,7 @@ jobs:
           done
 
           # Export PLATFORM for the next step
-          echo ::set-output name=PLATFORM:: $PLATFORM
+          echo ::set-output name=PLATFORM::$PLATFORM
         shell: bash {0} # Needed to avoid an exit at first error
 
       - name: Special esp8266 and esp32 platform handling
