@@ -92,6 +92,8 @@ jobs:
       # configure the Arduino CLI on the system.
       - name: Donload arduino-cli
         run: |
+          if [[ -z $CLI_VERSION ]]; then echo "Set CLI_VERSION to default value: \"latest\""; CLI_VERSION='latest'; fi
+
           # Download and install arduino IDE, if not already cached
           echo -n -e "\n\n${YELLOW}arduino-cli "
           if [[ -f $HOME/arduino_ide/arduino-cli ]]; then
@@ -111,14 +113,18 @@ jobs:
               mkdir $HOME/arduino_ide
             fi
             tar xf arduino-cli_${CLI_VERSION}_Linux_64bit.tar.gz -C $HOME/arduino_ide/
-            if [[ $? -ne 0 ]]; then echo -e "${RED}\xe2\x9c\x96"; else echo -e "${GREEN}\xe2\x9c\x93"; fi
+            if [[ $? -ne 0 ]]; then 
+              echo -e "${RED}\xe2\x9c\x96"
+            else
+              echo -e "${GREEN}\xe2\x9c\x93"
+            fi
           #  ls -l $HOME/arduino_ide/* # LICENSE.txt + arduino-cli
           #  ls -l $HOME # only arduino_ide
           fi
-
-      # echo -e HOME=\"$HOME\" # /home/runner
-      # echo PWD=$PWD # /home/runner/work/Github-Actions-Test/Github-Actions-Test
-      # which arduino-cli # /opt/hostedtoolcache/arduino-cli/0.9.0/x64/arduino-cli
+          # echo -e HOME=\"$HOME\" # /home/runner
+          # echo PWD=$PWD # /home/runner/work/Github-Actions-Test/Github-Actions-Test
+          # which arduino-cli # /opt/hostedtoolcache/arduino-cli/0.9.0/x64/arduino-cli
+        shell: bash {0} # Needed to avoid an exit at first error
 
       - name: Print version
         run: |
@@ -208,6 +214,7 @@ jobs:
 
           # Export PLATFORM for the next step
           echo ::set-output name=PLATFORM:: $PLATFORM
+        shell: bash {0} # Needed to avoid an exit at first error
 
       - name: Special esp8266 and esp32 platform handling
         run: |
@@ -263,6 +270,7 @@ jobs:
               exit 1
             fi
           fi
+        shell: bash {0} # Needed to avoid an exit at first error
 
       - name: Compile all examples
         env:
