@@ -26,7 +26,7 @@ jobs:
 
     env:
       # Comma separated list without double quotes around the list.
-      REQUIRED_LIBRARIES: #ATtinySerialOut
+      REQUIRED_LIBRARIES: #ATtinySerialOut # is loaded as custom library below
 
     strategy:
       matrix:
@@ -54,11 +54,14 @@ jobs:
             sketches-exclude: 50Hz # Comma separated list of (unique substrings of) example names to exclude in build
             build-properties:
               All: -DDEBUG -DINFO
-              WhistleSwitch: -DDEBUG -DINFO
+              WhistleSwitch: -DDEBUG
 
           - arduino-boards-fqbn: digistump:avr:digispark-tiny:clock=clock1  # ATtiny85 board @1 MHz
             platform-url: https://raw.githubusercontent.com/ArminJo/DigistumpArduino/master/package_digistump_index.json
             sketch-names: WhistleSwitch.ino,SimpleFrequencyDetector.ino,50Hz # Comma separated list of sketch names (no path required) or patterns to use in build
+            build-properties:
+              All: -DINFO
+              WhistleSwitch: -DUSE_ATTINY85_20X_AMPLIFICATION -DINFO
 
           - arduino-boards-fqbn: ATTinyCore:avr:attinyx5:chip=85,clock=1internal
             platform-url: http://drazzy.com/package_drazzy.com_index.json

@@ -31,6 +31,9 @@
 #define VERSION_FREQUENCY_DETECTOR_MINOR 0
 
 /*
+ * Version 2.0.1 - 9/2020
+ * - Removed blocking wait for ATmega32U4 Serial in examples.
+ *
  * Version 2.0.0 - 5/2020
  * - Renamed `doPlausi()` to `doEqualDistributionPlausi()`.
  * - Changed error values and computation.
@@ -46,12 +49,11 @@
  */
 
 #if defined(__AVR_ATtiny25__) || defined(__AVR_ATtiny45__) || defined(__AVR_ATtiny85__)
-#include "ATtinySerialOut.h" // Available as Arduino library and contained in WhistleSwitch example.
+#include "ATtinySerialOut.h" // For redefining Print. Available as Arduino library
 #endif
 
 // If enabled, store first input samples for printing to Arduino Plotter
 //#define PRINT_INPUT_SIGNAL_TO_PLOTTER
-
 // Enable this to print generated output to Arduino Serial Plotter (Ctrl-Shift-L)
 //#define PRINT_RESULTS_TO_SERIAL_PLOTTER
 #if defined(PRINT_INPUT_SIGNAL_TO_PLOTTER) && defined(PRINT_RESULTS_TO_SERIAL_PLOTTER)
@@ -321,7 +323,6 @@ bool setFrequencyDetectorDropoutTimes(uint16_t aMinMatchNODropoutMillis, uint16_
 uint16_t readSignal();
 uint16_t doEqualDistributionPlausi();
 void computeDirectAndFilteredMatch(uint16_t aFrequency);
-
 
 void printTriggerValues(Print * aSerial);
 void printPeriodLengthArray(Print * aSerial);
