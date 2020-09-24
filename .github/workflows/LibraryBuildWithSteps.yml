@@ -1,5 +1,6 @@
 # LibraryBuildWithSteps.yml
-# Github workflow script to test compile all examples of an Arduino library repository.
+# Github workflow script for step by step testing of arduino-test-compile.sh script.
+# Should run the same commands as arduino-test-compile.sh
 #
 # Copyright (C) 2020  Armin Joachimsmeyer
 # https://github.com/ArminJo/Github-Actions
