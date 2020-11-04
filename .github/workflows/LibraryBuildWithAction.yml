@@ -76,7 +76,8 @@ jobs:
           path: CustomLibrary # must contain string "Custom"
 
       - name: Compile all examples
-        uses: ArminJo/arduino-test-compile@master
+#        uses: ArminJo/arduino-test-compile@master
+        uses: ArminJo/arduino-test-compile@TestComposite
         with:
           arduino-board-fqbn: ${{ matrix.arduino-boards-fqbn }}
           required-libraries: ${{ env.REQUIRED_LIBRARIES }}

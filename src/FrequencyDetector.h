@@ -323,12 +323,12 @@ uint16_t readSignal();
 uint16_t doEqualDistributionPlausi();
 void computeDirectAndFilteredMatch(uint16_t aFrequency);
 
-void printTriggerValues(Print * aSerial);
-void printPeriodLengthArray(Print * aSerial);
-void printLegendForArduinoPlotter(Print * aSerial);
-void printDataForArduinoPlotter(Print * aSerial);
+void printTriggerValues(Print *aSerial);
+void printPeriodLengthArray(Print *aSerial);
+void printLegendForArduinoPlotter(Print *aSerial);
+void printDataForArduinoPlotter(Print *aSerial);
 #if defined(PRINT_INPUT_SIGNAL_TO_PLOTTER)
-void printInputSignalValuesForArduinoPlotter(Print * aSerial);
+void printInputSignalValuesForArduinoPlotter(Print *aSerial);
 #endif
 
 #endif /* FREQUENCYDETECTOR_H_ */

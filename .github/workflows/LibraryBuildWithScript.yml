@@ -97,7 +97,7 @@ jobs:
           ENV_SKETCHES_EXCLUDE: ${{ matrix.sketches-exclude }}
           ENV_BUILD_PROPERTIES: ${{ toJson(matrix.build-properties) }}
           ENV_SKETCH_NAMES: ${{ matrix.sketch-names }}
-          ENV_SKETCH_NAMES_FILE_START: .
+          ENV_SKETCH_NAMES_FIND_START: .
           ENV_DEBUG_COMPILE: true
 
         run: |

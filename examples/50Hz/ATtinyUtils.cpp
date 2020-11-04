@@ -146,13 +146,13 @@ void changeDigisparkClock() {
         // Divide 16 MHz clock by 16 for Digispark Boards to get the requested 1 MHz
         clock_prescale_set(clock_div_16);
 //        CLKPR = (1 << CLKPCE);  // unlock function
-//        CLKPR = (1 << CLKPS2); // 0x04 -> %16
+//        CLKPR = (1 << CLKPS2); // 0x04 -> divide by 16
 #endif
 #if (F_CPU == 8000000)
         // Divide 16 MHz clock by 2 for Digispark Boards to get the requested 8 MHz
         clock_prescale_set(clock_div_2);
 //        CLKPR = (1 << CLKPCE);  // unlock function
-//        CLKPR = (1 << CLKPS0); // 0x01 -> %2
+//        CLKPR = (1 << CLKPS0); // 0x01 -> divide by 2
 #endif
     }
 
@@ -178,4 +178,4 @@ void changeDigisparkClock() {
     }
 }
 
-#endif //  defined (__AVR_ATtiny85__)
+#endif //  defined(__AVR_ATtiny85__)

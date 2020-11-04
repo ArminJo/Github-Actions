@@ -517,7 +517,7 @@ void computeDirectAndFilteredMatch(uint16_t aFrequency) {
 #define STR_HELPER(x) #x
 #define STR(x) STR_HELPER(x)
 
-void printPeriodLengthArray(Print * aSerial) {
+void printPeriodLengthArray(Print *aSerial) {
     /*
      * Print frequency or error code
      */
@@ -543,7 +543,7 @@ void printPeriodLengthArray(Print * aSerial) {
 }
 
 #if defined(PRINT_INPUT_SIGNAL_TO_PLOTTER)
-void printInputSignalValuesForArduinoPlotter(Print * aSerial) {
+void printInputSignalValuesForArduinoPlotter(Print *aSerial) {
     aSerial->print(F("InputValue TriggerLevel="));
     aSerial->print(FrequencyDetectorControl.TriggerLevel);
     aSerial->print(F("  TriggerLevelLower="));
@@ -567,20 +567,20 @@ void printInputSignalValuesForArduinoPlotter(Print * aSerial) {
 }
 #endif
 
-void printTriggerValues(Print * aSerial) {
+void printTriggerValues(Print *aSerial) {
     aSerial->print(F("TriggerLower="));
     aSerial->print(FrequencyDetectorControl.TriggerLevelLower);
     aSerial->print(" Upper=");
     aSerial->println(FrequencyDetectorControl.TriggerLevel);
 }
 
-void printLegendForArduinoPlotter(Print * aSerial) {
+void printLegendForArduinoPlotter(Print *aSerial) {
     aSerial->println(
             F(
                     "FrequencyMatchDirect*95 MatchDropoutCount*13  MatchLowPassFiltered*2 FrequencyMatchFiltered*100 FrequencyRaw FrequencyFiltered"));
 }
 
-void printDataForArduinoPlotter(Print * aSerial) {
+void printDataForArduinoPlotter(Print *aSerial) {
     static uint8_t sConsecutiveErrorCount = 0; // Print only 10 errors, then stop
 
     if (sConsecutiveErrorCount >= 10) {
