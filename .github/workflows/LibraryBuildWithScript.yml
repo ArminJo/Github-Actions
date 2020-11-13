@@ -98,6 +98,7 @@ jobs:
           ENV_BUILD_PROPERTIES: ${{ toJson(matrix.build-properties) }}
           ENV_SKETCH_NAMES: ${{ matrix.sketch-names }}
           ENV_SKETCH_NAMES_FIND_START: .
+          ENV_DEBUG_INSTALL: true
           ENV_DEBUG_COMPILE: true
 
         run: |

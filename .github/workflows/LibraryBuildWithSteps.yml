@@ -125,14 +125,15 @@ jobs:
 
           # Add the arduino CLI to our PATH
           PATH="$HOME/arduino_ide:$PATH"
-          echo ::add-path::$HOME/arduino_ide
+          #echo ::add-path::$HOME/arduino_ide # is deprecated
+          echo PATH="$HOME/arduino_ide:$PATH" >> $GITHUB_ENV
           #print version
           arduino-cli version
 
           # echo -e HOME=\"$HOME\" # /home/runner
           # echo PWD=$PWD # /home/runner/work/Github-Actions-Test/Github-Actions-Test
           # which arduino-cli # /opt/hostedtoolcache/arduino-cli/0.9.0/x64/arduino-cli
-        shell: bash {0} # Needed to avoid an exit at first error
+        shell: bash {0} # Required to avoid an exit at first error
 
       - name: Print environment
         run: |
@@ -220,7 +221,7 @@ jobs:
 
           # Export PLATFORM for the next step
           echo ::set-output name=PLATFORM::$PLATFORM
-        shell: bash {0} # Needed to avoid an exit at first error
+        shell: bash {0} # Required to avoid an exit at first error
 
       - name: Special esp8266 and esp32 platform handling
         run: |
@@ -240,7 +241,7 @@ jobs:
             fi
             pip install pyserial
           fi
-        shell: bash {0} # Needed to avoid an exit at first error
+        shell: bash {0} # Required to avoid an exit at first error
 
       - name: List installed boards with their FQBN
         # ls -l $HOME/.arduino15/packages/ # I see only arduino and one of the Attiny cores but not all 3 together
@@ -276,7 +277,7 @@ jobs:
               exit 1
             fi
           fi
-        shell: bash {0} # Needed to avoid an exit at first error
+        shell: bash {0} # Required to avoid an exit at first error
 
       - name: Compile all examples
         env:
@@ -420,4 +421,4 @@ jobs:
             exit_code=2
           fi
           exit $exit_code
-        shell: bash {0} # Needed to avoid an exit at first error
+        shell: bash {0} # Required to avoid an exit at first error
