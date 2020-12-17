@@ -70,7 +70,7 @@ jobs:
 
 #          - arduino-boards-fqbn: arduino:avr:uno|trace # UNO board with different build properties
 #            sketch-names: \*.ino # is default setting
-#            sketches-exclude: 50Hz # Comma separated list of (unique substrings of) example names to exclude in build
+#            sketches-exclude: 50Hz # Comma separated list of example names to exclude in build
 #            build-properties:
 #              WhistleSwitch:
 #                -DDEBUG
@@ -78,7 +78,7 @@ jobs:
 
 #          - arduino-boards-fqbn: digistump:avr:digispark-tiny:clock=clock1  # ATtiny85 board @1 MHz
 #            platform-url: https://raw.githubusercontent.com/ArminJo/DigistumpArduino/master/package_digistump_index.json
-#            sketches-exclude: WhistleSwitch,"Blink" # Comma separated list of (unique substrings of) example names to exclude in build
+#            sketches-exclude: WhistleSwitch,"Blink" # Comma separated list of example names to exclude in build
 #            build-properties:
 #              WhistleSwitch:
 #                -DDEBUG
@@ -121,7 +121,7 @@ jobs:
           #echo matrix=$matrix   # empty
           #echo matrix=${{ matrix }} #=Object The string "Object"
           #########################################
-          # PWD = GITHUB_WORKSPACE=/home/runner/work/Github-Actions/Github-Actions
+          # GITHUB_WORKSPACE = PWD = /home/runner/work/Github-Actions/Github-Actions
           # HOME=/home/runner
           # RUNNER_TEMP=/home/runner/work/_temp
           # RUNNER_TOOL_CACHE=/opt/hostedtoolcache
@@ -154,7 +154,8 @@ jobs:
             ls -l $RUNNER_TOOL_CACHE
           fi
           $RUNNER_TOOL_CACHE/arduino_ide/arduino-cli version
-          echo "::add-path::${RUNNER_TOOL_CACHE}/arduino_ide" # add to path for next steps
+          #echo "::add-path::${RUNNER_TOOL_CACHE}/arduino_ide" # add to path for next steps - is deprecated
+          echo PATH="${RUNNER_TOOL_CACHE}/arduino_ide:$PATH" >> $GITHUB_ENV
 
       #- name: Cache Arduino packages
       # does not work, since we can not build separate caches for each platform
@@ -232,4 +233,4 @@ jobs:
               echo -n "with ${PROP_MAP[$EXAMPLE_NAME]} "
             fi
           fi
-        shell: bash {0} # Needed to avoid an exit at first error
+        shell: bash {0} # Required to avoid an exit at first error

@@ -51,7 +51,7 @@ jobs:
         #############################################################################################################
         include:
           - arduino-boards-fqbn: arduino:avr:uno|All-DEBUG # UNO board with -DDEBUG for all examples
-            sketches-exclude: 50Hz # Comma separated list of (unique substrings of) example names to exclude in build
+            sketches-exclude: 50Hz # Comma separated list of example names to exclude in build
             build-properties:
               All: -DDEBUG -DINFO
               WhistleSwitch: -DDEBUG

@@ -29,23 +29,7 @@
 #define VERSION_FREQUENCY_DETECTOR "2.0.0"
 #define VERSION_FREQUENCY_DETECTOR_MAJOR 2
 #define VERSION_FREQUENCY_DETECTOR_MINOR 0
-
-/*
- * Version 2.0.0 - 9/2020
- * - Renamed `doPlausi()` to `doEqualDistributionPlausi()`.
- * - Changed error values and computation.
- * - Added documentation.
- * - Added MEASURE_READ_SIGNAL_TIMING capability.
- * - Added plotter output of input signal.
- * - Removed blocking wait for ATmega32U4 Serial in examples.
- *
- *
- * Version 1.1.0 - 1/2020
- * - Corrected formula for compensating millis().
- * - New field PeriodOfOneReadingMillis.
- * - Now accept dropout values in milliseconds.
- * - New functions printLegendForArduinoPlotter() and printDataForArduinoPlotter().
- */
+// The change log is at the bottom of the file
 
 #if defined(__AVR_ATtiny25__) || defined(__AVR_ATtiny45__) || defined(__AVR_ATtiny85__)
 #include "ATtinySerialOut.h" // For redefining Print. Available as Arduino library
@@ -330,5 +314,22 @@ void printDataForArduinoPlotter(Print *aSerial);
 #if defined(PRINT_INPUT_SIGNAL_TO_PLOTTER)
 void printInputSignalValuesForArduinoPlotter(Print *aSerial);
 #endif
+
+/*
+ * Version 2.0.0 - 9/2020
+ * - Renamed `doPlausi()` to `doEqualDistributionPlausi()`.
+ * - Changed error values and computation.
+ * - Added documentation.
+ * - Added MEASURE_READ_SIGNAL_TIMING capability.
+ * - Added plotter output of input signal.
+ * - Removed blocking wait for ATmega32U4 Serial in examples.
+ *
+ *
+ * Version 1.1.0 - 1/2020
+ * - Corrected formula for compensating millis().
+ * - New field PeriodOfOneReadingMillis.
+ * - Now accept dropout values in milliseconds.
+ * - New functions printLegendForArduinoPlotter() and printDataForArduinoPlotter().
+ */
 
 #endif /* FREQUENCYDETECTOR_H_ */

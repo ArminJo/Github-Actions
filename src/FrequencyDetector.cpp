@@ -421,8 +421,8 @@ uint16_t doEqualDistributionPlausi() {
 /**
  * simple low-pass filter over 15 values
  */
-uint16_t LowPassFilterWith16Values(uint16_t aFilteredValue, uint16_t aValue) {
-    return (((aFilteredValue * 15) + aValue + (1 << 3)) >> 4); // (tValue+8)/16 (+8 to avoid rounding errors)
+uint16_t LowPassFilterWith16Values(int16_t aFilteredValue, int16_t aValue) {
+    return (aFilteredValue + (((aValue - aFilteredValue) + (1 << 3)) >> 4)); // (tValue+8)/16 (+8 to avoid rounding errors)
 }
 
 /**

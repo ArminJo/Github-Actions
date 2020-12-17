@@ -334,9 +334,9 @@ uint16_t predefinedRangesEnd[] = { 2050, 1680, 1480, 1280, 1130, 990, 1900, 1530
 #endif // (__AVR_ATmega328P__)
 
 #ifdef USE_ATTINY85_20X_AMPLIFICATION
-#define AVERAGE_LEVEL_DELTA_REQUIRED_FOR_OUTPUT 0x10 // high noise
+#define AVERAGE_LEVEL_DELTA_REQUIRED_FOR_OUTPUT 0x10 // to suppress high noise for printing
 #else
-#define AVERAGE_LEVEL_DELTA_REQUIRED_FOR_OUTPUT 0x04 // lower noise
+#define AVERAGE_LEVEL_DELTA_REQUIRED_FOR_OUTPUT 0x04 // to suppress lower noise for printing
 #endif
 
 #define USE_BUTTON_1  // Enable code for button at INT1 (pin3 on 328P, PA3 on ATtiny167, PCINT0 / PCx for ATtinyX5)
@@ -356,7 +356,7 @@ EasyButton ButtonAtPin3(&handleButtonPress, &handleButtonRelease); // Only one b
 #define MIN_NO_DROPOUT_MILLIS_BEFORE_ANY_MATCH 400
 #define MATCH_MILLIS_NEEDED_DEFAULT (1200 - MIN_NO_DROPOUT_MILLIS_BEFORE_ANY_MATCH) // Milliseconds of frequency detector indicating successful match before relay toggle
 #define MATCH_TO_LONG_MILLIS        1000    // max milliseconds for match condition true after relay toggled, otherwise switch back to relay state before
-#define RELAY_DEAD_MILLIS           800    // min milliseconds between 2 changes of relay state -> to avoid to fast relay switching
+#define RELAY_DEAD_MILLIS           800     // min milliseconds between 2 changes of relay state -> to avoid to fast relay switching
 #define BUTTON_DEBOUNCE_MILLIS      40      // must be smaller than 65 since delay micros has its limitations at 64k!
 #if RELAY_DEAD_MILLIS >= MATCH_TO_LONG_MILLIS
 #error MATCH_TO_LONG_MILLIS must be grater than RELAY_DEAD_MILLIS, otherwise toggling back on long match is rejected
@@ -438,7 +438,7 @@ struct WhistleSwitchControlStruct {
     uint8_t ButtonPressCounter;
 
     int16_t MatchValidCount; // count for valid matches after last STATE_LED_OFF
-    int16_t MatchValidNeeded; // valid matches detected required for accepting match, i.e. for toggling relay := MillisNeededForValidMatch/timeOfReading
+    int16_t MatchValidRequired; // valid matches detected required for accepting match, i.e. for toggling relay := MillisNeededForValidMatch/timeOfReading
     uint16_t MillisNeededForValidMatch;
 
 } WhistleSwitchControl;
@@ -510,11 +510,11 @@ void backToStateDetect() {
 
 void setMillisNeededForValidMatch(uint16_t aPeriodValidNeededMillis) {
     WhistleSwitchControl.MillisNeededForValidMatch = aPeriodValidNeededMillis;
-    WhistleSwitchControl.MatchValidNeeded = aPeriodValidNeededMillis / FrequencyDetectorControl.PeriodOfOneReadingMillis;
+    WhistleSwitchControl.MatchValidRequired = aPeriodValidNeededMillis / FrequencyDetectorControl.PeriodOfOneReadingMillis;
 
 #ifdef TRACE
     Serial.print("MatchValidNeeded=");
-    Serial.print(WhistleSwitchControl.MatchValidNeeded);
+    Serial.print(WhistleSwitchControl.MatchValidRequired);
     Serial.print(F(" MillisNeededForValidMatch="));
     Serial.println(WhistleSwitchControl.MillisNeededForValidMatch);
 #endif
@@ -732,7 +732,7 @@ void processMatchState() {
     if (WhistleSwitchControl.MatchValidCount < 0) {
         WhistleSwitchControl.MatchValidCount = 0;
     }
-    if (WhistleSwitchControl.MatchValidCount >= WhistleSwitchControl.MatchValidNeeded) {
+    if (WhistleSwitchControl.MatchValidCount >= WhistleSwitchControl.MatchValidRequired) {
         /*
          * valid match here  - "RelayJustToggled = true" is be set in toggleRelay()
          */
