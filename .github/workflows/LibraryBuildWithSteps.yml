@@ -52,10 +52,10 @@ jobs:
         # You may add a suffix behind the fqbn with "|" to specify one board for e.g. different compile options like arduino:avr:uno|trace
         #############################################################################################################
         arduino-boards-fqbn:
-          - arduino:avr:uno
+#          - arduino:avr:uno
           - arduino:avr:uno|All-DEBUG
           - digistump:avr:digispark-tiny:clock=clock1
-          - ATTinyCore:avr:attinyx5:chip=85,clock=1internal
+          - teensy:avr:teensy31:usb=serial,opt=o2std
 
         # Specify parameters for each board.
         # With sketches-exclude you may exclude specific examples for a board. Use a comma separated list.
@@ -72,8 +72,8 @@ jobs:
             sketch-names: WhistleSwitch.ino,SimpleFrequencyDetector.ino,50Hz # Comma separated list of sketch names (no path required) or patterns to use in build
 #            sketch-names: Whistle.ino # Comma separated list of sketch names (no path required) or patterns to use in build
 
-          - arduino-boards-fqbn: ATTinyCore:avr:attinyx5:chip=85,clock=1internal
-            platform-url: http://drazzy.com/package_drazzy.com_index.json
+          - arduino-boards-fqbn: teensy:avr:teensy31:usb=serial,opt=o2std
+            sketch-names: WhistleSwitch.ino,SimpleFrequencyDetector.ino,50Hz # Comma separated list of sketch names (no path required) or patterns to use in build
 
       # Do not cancel all jobs / architectures if one job fails
       fail-fast: false
@@ -134,6 +134,49 @@ jobs:
           # echo PWD=$PWD # /home/runner/work/Github-Actions-Test/Github-Actions-Test
           # which arduino-cli # /opt/hostedtoolcache/arduino-cli/0.9.0/x64/arduino-cli
         shell: bash {0} # Required to avoid an exit at first error
+
+      - name: Donload teensyduino
+        run: |
+          # Download and install teensy core
+          echo -n -e "\n\n${YELLOW}Teensy core "
+          if [[ -f $HOME/arduino_ide/arduino-cli ]]; then
+            echo -e "cached: ${GREEN}\xe2\x9c\x93" # never seen :-(
+          else
+            echo -n "downloading: "
+            wget --quiet https://www.pjrc.com/teensy/td_153/TeensyduinoInstall.linux64
+            if [[ $? -ne 0 ]]; then
+              echo -e "${RED}\xe2\x9c\x96"
+              echo "::error:: Unable to download TeensyduinoInstall.linux64"
+              exit 3
+            else
+              echo -e "${GREEN}\xe2\x9c\x93"
+            fi
+            echo -n "Installing teensy core to ${HOME}/arduino_ide:  "
+            if [[ ! -d $HOME/arduino_ide/ ]]; then
+              echo -e "::error:: $HOME/arduino_ide/ not found"
+            fi
+            ./TeensyduinoInstall.linux6 --dir=$HOME/arduino_ide/
+            if [[ $? -ne 0 ]]; then 
+              echo -e "${RED}\xe2\x9c\x96"
+            else
+              echo -e "${GREEN}\xe2\x9c\x93"
+            fi
+          #  ls -l $HOME/arduino_ide/* # LICENSE.txt + arduino-cli
+          #  ls -l $HOME # only arduino_ide
+          fi
+
+          # Add the arduino CLI to our PATH
+          PATH="$HOME/arduino_ide:$PATH"
+          #echo ::add-path::$HOME/arduino_ide # is deprecated
+          echo PATH="$HOME/arduino_ide:$PATH" >> $GITHUB_ENV
+          #print version
+          arduino-cli version
+
+          # echo -e HOME=\"$HOME\" # /home/runner
+          # echo PWD=$PWD # /home/runner/work/Github-Actions-Test/Github-Actions-Test
+          # which arduino-cli # /opt/hostedtoolcache/arduino-cli/0.9.0/x64/arduino-cli
+        shell: bash {0} # Required to avoid an exit at first error
+
 
       - name: Print environment
         run: |
