@@ -55,7 +55,6 @@ jobs:
 #          - arduino:avr:uno
           - arduino:avr:uno|All-DEBUG
           - digistump:avr:digispark-tiny:clock=clock1
-          - teensy:avr:teensy31:usb=serial,opt=o2std
 
         # Specify parameters for each board.
         # With sketches-exclude you may exclude specific examples for a board. Use a comma separated list.
@@ -71,9 +70,6 @@ jobs:
             platform-url: https://raw.githubusercontent.com/ArminJo/DigistumpArduino/master/package_digistump_index.json
             sketch-names: WhistleSwitch.ino,SimpleFrequencyDetector.ino,50Hz # Comma separated list of sketch names (no path required) or patterns to use in build
 #            sketch-names: Whistle.ino # Comma separated list of sketch names (no path required) or patterns to use in build
-
-          - arduino-boards-fqbn: teensy:avr:teensy31:usb=serial,opt=o2std
-            sketch-names: WhistleSwitch.ino,SimpleFrequencyDetector.ino,50Hz # Comma separated list of sketch names (no path required) or patterns to use in build
 
       # Do not cancel all jobs / architectures if one job fails
       fail-fast: false
