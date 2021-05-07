@@ -873,7 +873,7 @@ void setup() {
 #else // defined(__AVR_ATtiny85__)
     Serial.begin(115200);
 #  if defined(__AVR_ATmega32U4__) || defined(SERIAL_USB) || defined(SERIAL_PORT_USBVIRTUAL)
-    delay(2000); // To be able to connect Serial monitor after reset and before first printout
+    delay(4000); // To be able to connect Serial monitor after reset or power up and before first print out. Do not wait for an attached Serial Monitor!
 #  endif
 
     pinMode(LED_LOWER, OUTPUT);

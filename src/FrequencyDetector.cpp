@@ -382,7 +382,7 @@ uint16_t readSignal() {
 uint16_t doEqualDistributionPlausi() {
     // Only check if no error was detected before
     if (FrequencyDetectorControl.FrequencyRaw > SIGNAL_FREQUENCY_TOO_HIGH) {
-        uint8_t tPeriodCount = FrequencyDetectorControl.PeriodCount; // 64 for 512, 128 for 1024 samples
+        uint_fast8_t tPeriodCount = FrequencyDetectorControl.PeriodCount; // 64 for 512, 128 for 1024 samples
         /*
          * check if not more than 1/8 of periods are out of range - less than 0.75 or more than 1.5
          */
@@ -397,7 +397,7 @@ uint16_t doEqualDistributionPlausi() {
             Serial.print("  ");
             printPeriodLengthArray(&Serial);
 #endif
-        for (uint8_t i = 0; i < tPeriodCount; ++i) {
+        for (uint_fast8_t i = 0; i < tPeriodCount; ++i) {
             if (FrequencyDetectorControl.PeriodLength[i] > tPeriodMax || FrequencyDetectorControl.PeriodLength[i] < tPeriodMin) {
                 tErrorCount++;
             }
@@ -535,7 +535,7 @@ void printPeriodLengthArray(Print *aSerial) {
     aSerial->print(FrequencyDetectorControl.PeriodCount);
     aSerial->print(F(" of " STR(SIZE_OF_PERIOD_LENGTH_ARRAY_FOR_PLAUSI) " content="));
 
-    for (uint8_t i = 0; i < FrequencyDetectorControl.PeriodCount; ++i) {
+    for (uint_fast8_t i = 0; i < FrequencyDetectorControl.PeriodCount; ++i) {
         aSerial->print(FrequencyDetectorControl.PeriodLength[i]);
         aSerial->print(",");
     }

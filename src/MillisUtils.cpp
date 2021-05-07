@@ -26,10 +26,10 @@
  *
  */
 
-#if defined(__AVR__)
 #include <Arduino.h>
-
 #include "MillisUtils.h"
+
+#if defined(__AVR__)
 
 #ifndef cbi
 #define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
@@ -105,7 +105,7 @@ bool areMillisGone(unsigned int aMillis) {
     return false;
 }
 
-bool areMillisGone(unsigned int aMillis, unsigned long * aLastMillisPtr) {
+bool areMillisGone(unsigned int aMillis, unsigned long *aLastMillisPtr) {
     if (millis() - *aLastMillisPtr >= aMillis) {
         *aLastMillisPtr = millis();
         return true;
@@ -121,7 +121,7 @@ bool areMillisGone(unsigned int aMillis, unsigned long * aLastMillisPtr) {
  */
 void speedTestWith1kCalls(void (*aFunctionUnderTest)(void)) {
     uint32_t tMillisStart = millis();
-    for (uint8_t i = 0; i < 100; ++i) {
+    for (uint_fast8_t i = 0; i < 100; ++i) {
         // unroll 10 times
         aFunctionUnderTest();
         aFunctionUnderTest();

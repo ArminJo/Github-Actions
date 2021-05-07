@@ -155,7 +155,7 @@ jobs:
             if [[ ! -d $HOME/arduino_ide/ ]]; then
               echo -e "::error:: $HOME/arduino_ide/ not found"
             fi
-            ./TeensyduinoInstall.linux6 --dir=$HOME/arduino_ide/
+            ./TeensyduinoInstall.linux6 --dir=$HOME/.arduino15/packages/
             if [[ $? -ne 0 ]]; then 
               echo -e "${RED}\xe2\x9c\x96"
             else
@@ -164,13 +164,6 @@ jobs:
           #  ls -l $HOME/arduino_ide/* # LICENSE.txt + arduino-cli
           #  ls -l $HOME # only arduino_ide
           fi
-
-          # Add the arduino CLI to our PATH
-          PATH="$HOME/arduino_ide:$PATH"
-          #echo ::add-path::$HOME/arduino_ide # is deprecated
-          echo PATH="$HOME/arduino_ide:$PATH" >> $GITHUB_ENV
-          #print version
-          arduino-cli version
 
           # echo -e HOME=\"$HOME\" # /home/runner
           # echo PWD=$PWD # /home/runner/work/Github-Actions-Test/Github-Actions-Test

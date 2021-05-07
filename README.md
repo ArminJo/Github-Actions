@@ -62,7 +62,7 @@ To enable my smartgit client to commit to the `.github/workflow` directory witho
 ## 3.Party
 | Name | Build Status | Release date | Commits since latest |
 |-|-|-|-|
-| IRremote | [![LibraryBuild](https://github.com/z3t0/Arduino-IRremote/workflows/LibraryBuild/badge.svg?branch=beta)](https://github.com/z3t0/Arduino-IRremote/actions) |  ![Release date](https://img.shields.io/github/release-date/z3t0/Arduino-IRremote) | [![Commits since latest](https://img.shields.io/github/commits-since/z3t0/Arduino-IRremote/latest)](https://github.com/z3t0/Arduino-IRremote/commits/master) |
+| IRremote | [![LibraryBuild](https://github.com/Arduino-IRremote/Arduino-IRremote/workflows/LibraryBuild/badge.svg?branch=beta)](https://github.com/Arduino-IRremote/Arduino-IRremote/actions) |  ![Release date](https://img.shields.io/github/release-date/Arduino-IRremote/Arduino-IRremote) | [![Commits since latest](https://img.shields.io/github/commits-since/Arduino-IRremote/Arduino-IRremote/latest)](https://github.com/Arduino-IRremote/Arduino-IRremote/commits/master) |
 
 
 <br/><br/>Here the background story, why this action / repository was created:
