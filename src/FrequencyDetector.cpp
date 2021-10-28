@@ -3,7 +3,7 @@
  *
  * Analyzes a microphone signal and outputs the detected frequency. It simply counts zero crossings and do not use FFT.
  * The ADC sample data is NOT stored in RAM, only the period lengths are stored in the PeriodLength[] array,
- * which is a byte array and has the size of NUMBER_OF_SAMPLES / 8.
+ * which is a byte array and has the size of NUMBER_OF_2_COMPRESSED_SAMPLES / 8.
  *
  * The timer 0 interrupt, which counts the milliseconds, is disabled during reading and enabled afterwards!
  * The value of millis() is adjusted after reading.
@@ -121,7 +121,7 @@ void setFrequencyDetectorReadingPrescaleValue(uint8_t aADCPrescalerValue) {
     //Formula is F_CPU / (PrescaleFactor * 13)
     FrequencyDetectorControl.PeriodOfOneSampleMicros = ((1 << aADCPrescalerValue) * 13) / (F_CPU / 1000000L);
     FrequencyDetectorControl.PeriodOfOneReadingMillis = ((FrequencyDetectorControl.PeriodOfOneSampleMicros
-            * (uint32_t) NUMBER_OF_SAMPLES) + CLOCKS_FOR_READING_NO_LOOP) / 1000;
+            * (uint32_t) NUMBER_OF_2_COMPRESSED_SAMPLES) + CLOCKS_FOR_READING_NO_LOOP) / 1000;
     uint32_t tFrequencyOfOneSample = 1000000L / FrequencyDetectorControl.PeriodOfOneSampleMicros;
     FrequencyDetectorControl.FrequencyOfOneSample = tFrequencyOfOneSample;
 
@@ -197,7 +197,7 @@ void setFrequencyDetectorReadingDefaults() {
 uint16_t sReadValueBuffer[SIGNAL_PLOTTER_BUFFER_SIZE];
 #endif
 /*
- * ADC read routine reads NUMBER_OF_SAMPLES (1024/512) samples and computes:
+ * ADC read routine reads NUMBER_OF_2_COMPRESSED_SAMPLES (1024/512) samples and computes:
  * - FrequencyDetectorControl.FrequencyRaw - Frequency of signal
  * or error value SIGNAL_STRENGTH_LOW if signal is too weak
  *
@@ -248,7 +248,7 @@ uint16_t readSignal() {
     /*
      * Read 512/1024 samples but only store periods
      */
-    for (uint16_t i = 0; i < NUMBER_OF_SAMPLES; i++) {
+    for (unsigned int i = 0; i < NUMBER_OF_2_COMPRESSED_SAMPLES; i++) {
         // loop takes around 39 cycles at least and we have 52 cycles @1MHz between each conversion
         /*
          * wait for free running conversion to finish.
@@ -316,7 +316,7 @@ uint16_t readSignal() {
 
     ADCSRA &= ~(1 << ADATE); // Disable ADC auto-triggering
 
-    FrequencyDetectorControl.AverageLevel = tSumOfSampleValues / NUMBER_OF_SAMPLES;
+    FrequencyDetectorControl.AverageLevel = tSumOfSampleValues / NUMBER_OF_2_COMPRESSED_SAMPLES;
     FrequencyDetectorControl.TriggerLastPosition = tPeriodCountPosition;
     FrequencyDetectorControl.PeriodCount = tPeriodCount;
 
@@ -412,7 +412,6 @@ uint16_t doEqualDistributionPlausi() {
             Serial.print(F("  F="));
             Serial.print(FrequencyDetectorControl.FrequencyRaw);
             Serial.println(F("Hz"));
-
 #endif
     }
     return FrequencyDetectorControl.FrequencyRaw;
@@ -549,12 +548,11 @@ void printInputSignalValuesForArduinoPlotter(Print *aSerial) {
     aSerial->print(F("  TriggerLevelLower="));
     aSerial->print(FrequencyDetectorControl.TriggerLevelLower);
     aSerial->print(F(" Frequency="));
-    aSerial->print(FrequencyDetectorControl.FrequencyRaw);
-    aSerial->println(F(" _ -")); // to clear old legend strings
+    aSerial->println(FrequencyDetectorControl.FrequencyRaw);
 
 
-    aSerial->println(0);
-    for (uint16_t i = 0; i < SIGNAL_PLOTTER_BUFFER_SIZE; ++i) {
+    aSerial->println(0); // To signal start of new buffer and to display the 0 line
+    for (unsigned int i = 0; i < SIGNAL_PLOTTER_BUFFER_SIZE; ++i) {
         aSerial->print(sReadValueBuffer[i]);
         aSerial->print(' ');
         aSerial->print(FrequencyDetectorControl.TriggerLevel);
@@ -563,7 +561,7 @@ void printInputSignalValuesForArduinoPlotter(Print *aSerial) {
         aSerial->print(' ');
         aSerial->println(FrequencyDetectorControl.FrequencyRaw);
     }
-    aSerial->println(0);
+    aSerial->println();
 }
 #endif
 
