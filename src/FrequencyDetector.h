@@ -19,12 +19,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <http://www.gnu.org/licenses/gpl.html>.
+ *  along with this program. If not, see <http://www.gnu.org/licenses/gpl.html>.
  *
  */
 
-#ifndef FREQUENCYDETECTOR_H_
-#define FREQUENCYDETECTOR_H_
+#ifndef _FREQUENCY_DETECTOR_H
+#define _FREQUENCY_DETECTOR_H
 
 #define VERSION_FREQUENCY_DETECTOR "2.0.0"
 #define VERSION_FREQUENCY_DETECTOR_MAJOR 2
@@ -156,7 +156,7 @@
 #define MICROS_PER_SAMPLE 26
 #  endif
 #endif
-#ifndef PRESCALE_VALUE_DEFAULT
+#if !defined(PRESCALE_VALUE_DEFAULT)
 # error "F_CPU is not one of 16000000, 8000000 or 1000000"
 #endif
 
@@ -334,4 +334,4 @@ void printInputSignalValuesForArduinoPlotter(Print *aSerial);
  * - New functions printLegendForArduinoPlotter() and printDataForArduinoPlotter().
  */
 
-#endif /* FREQUENCYDETECTOR_H_ */
+#endif // _FREQUENCY_DETECTOR_H

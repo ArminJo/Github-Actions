@@ -20,7 +20,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <http://www.gnu.org/licenses/gpl.html>.
+ *  along with this program. If not, see <http://www.gnu.org/licenses/gpl.html>.
  *
  *  It uses FrequencyDetector to recognize a whistle pitch which in turn operates a mains relay.
  *  By using different pitches it is possible to control multiple relays in a single room.
@@ -299,7 +299,7 @@ uint16_t predefinedRangesEnd[] = { 2050, 1680, 1480, 1280, 1130, 990, 1900, 1530
 #  endif
 
 #define ADC_REFERENCE INTERNAL  // 1V1
-#ifdef USE_ATTINY85_20X_AMPLIFICATION
+#if defined(USE_ATTINY85_20X_AMPLIFICATION)
 // Here button pin is also used as differential input, therefore need inverse logic -> active is HIGH
 // Signal in clamped by 3V3 zener diode!!!
 #define ADC_CHANNEL 7           // Differential input (ADC2/PB4 - ADC3/PB3(Button)) * 20
@@ -308,7 +308,7 @@ uint16_t predefinedRangesEnd[] = { 2050, 1680, 1480, 1280, 1130, 990, 1900, 1530
 #define ADC_CHANNEL 2           // Channel ADC2 / PB4 - Signal in clamped by 3V3 zener diode!!!
 #endif // USE_ATTINY85_20X_AMPLIFICATION
 
-#ifdef MEASURE_TIMING
+#if defined(MEASURE_TIMING)
 #define READ_SIGNAL_TIMING_OUTPUT_PIN LED_FEEDBACK
 #endif
 
@@ -334,7 +334,7 @@ uint16_t predefinedRangesEnd[] = { 2050, 1680, 1480, 1280, 1130, 990, 1900, 1530
 #define READ_SIGNAL_TIMING_OUTPUT_PIN 12
 #endif // (__AVR_ATmega328P__)
 
-#ifdef USE_ATTINY85_20X_AMPLIFICATION
+#if defined(USE_ATTINY85_20X_AMPLIFICATION)
 #define AVERAGE_LEVEL_DELTA_REQUIRED_FOR_OUTPUT 0x10 // to suppress high noise for printing
 #else
 #define AVERAGE_LEVEL_DELTA_REQUIRED_FOR_OUTPUT 0x04 // to suppress lower noise for printing
@@ -513,7 +513,7 @@ void setMillisNeededForValidMatch(uint16_t aPeriodValidNeededMillis) {
     WhistleSwitchControl.MillisNeededForValidMatch = aPeriodValidNeededMillis;
     WhistleSwitchControl.MatchValidRequired = aPeriodValidNeededMillis / FrequencyDetectorControl.PeriodOfOneReadingMillis;
 
-#ifdef TRACE
+#if defined(TRACE)
     Serial.print("MatchValidNeeded=");
     Serial.print(WhistleSwitchControl.MatchValidRequired);
     Serial.print(F(" MillisNeededForValidMatch="));
@@ -528,7 +528,7 @@ void eepromWriteParameter() {
     sPersistentParameters.RelayOnTimeoutIndex = WhistleSwitchControl.RelayOnTimeoutIndex;
     eeprom_write_block((void*) &sPersistentParameters, &sPersistentParametersEEPROM, sizeof(EepromParameterStruct));
 
-#ifdef INFO
+#if defined(INFO)
     Serial.print(F("FrequencyMin="));
     Serial.print(sPersistentParameters.FrequencyMin);
     Serial.print(F(" FrequencyMax="));
@@ -544,7 +544,7 @@ void eepromWriteParameter() {
 
 void eepromReadParameter() {
     // read parameter structure except timeout
-#ifdef DEBUG
+#if defined(DEBUG)
     Serial.print(F("&sPersistentParametersEEPROMs="));
     Serial.println((uint16_t) &sPersistentParametersEEPROM, HEX);
 #endif
@@ -567,7 +567,7 @@ void eepromReadParameter() {
         FrequencyDetectorControl.FrequencyMatchHigh = predefinedRangesEnd[1];
         WhistleSwitchControl.MillisNeededForValidMatch = MATCH_MILLIS_NEEDED_DEFAULT;
         WhistleSwitchControl.RelayOnTimeoutIndex = TIMEOUT_RELAY_ON_INDEX_DEFAULT; // set to 8 hours
-#ifdef INFO
+#if defined(INFO)
         Serial.println(F("EEPROM values were wrong, store default values to EEPROM"));
 #endif
         eepromWriteParameter();
@@ -590,7 +590,7 @@ void signalRangeIndexByLed() {
         }
     }
 
-#ifdef INFO
+#if defined(INFO)
     Serial.print(F("Frequency match range index="));
     Serial.println(i + 1);
 #endif
@@ -618,7 +618,7 @@ void signalAverageLevelByLed() {
 }
 
 void signalTimeoutByLed() {
-#ifdef INFO
+#if defined(INFO)
     Serial.print(F("RelayOnTimeoutIndex="));
     Serial.println(WhistleSwitchControl.RelayOnTimeoutIndex);
 #endif
@@ -798,7 +798,7 @@ void printInfos() {
         sAverageLevelPrinted = FrequencyDetectorControl.TriggerLevel;
         sSignalDeltaPrinted = FrequencyDetectorControl.SignalDelta;
 
-#  ifdef TRACE
+#  if defined(TRACE)
 #    if defined(__AVR_ATtiny85__)
         writeString(F("FF="));
         writeUnsignedInt(FrequencyDetectorControl.FrequencyFiltered);
@@ -848,7 +848,7 @@ void MyInit(void) {
  * Setup section
  *******************************************************************************************/
 void setup() {
-#ifdef INFO
+#if defined(INFO)
     uint8_t tMCUSRStored = 0;
     if (MCUSR != 0) {
         tMCUSRStored = MCUSR; // content of MCUSR register at startup
@@ -873,7 +873,7 @@ void setup() {
 
 #else // defined(__AVR_ATtiny85__)
     Serial.begin(115200);
-#if defined(__AVR_ATmega32U4__) || defined(SERIAL_PORT_USBVIRTUAL) || defined(SERIAL_USB) || defined(SERIALUSB_PID) || defined(ARDUINO_attiny3217)
+#if defined(__AVR_ATmega32U4__) || defined(SERIAL_PORT_USBVIRTUAL) || defined(SERIAL_USB) /*stm32duino*/|| defined(USBCON) /*STM32_stm32*/|| defined(SERIALUSB_PID) || defined(ARDUINO_attiny3217)
     delay(4000); // To be able to connect Serial monitor after reset or power up and before first print out. Do not wait for an attached Serial Monitor!
 #  endif
 
@@ -891,7 +891,7 @@ void setup() {
 
     WhistleSwitchControl.MainState = IN_SETUP;
 
-#ifdef INFO
+#if defined(INFO)
     // Just to know which program is running on my Arduino
     Serial.print(F("\r\nSTART WhistleSwitch.cpp\r\nVersion " VERSION_EXAMPLE " from " __DATE__"\r\nMCUSR=0x"));
     Serial.println(tMCUSRStored, HEX);
@@ -911,7 +911,7 @@ void setup() {
 // get frequency parameter from eeprom
     eepromReadParameter();
 
-#ifdef INFO
+#if defined(INFO)
     Serial.print(F("Free Ram/Stack[bytes]="));
     Serial.println(getFreeRam());
 
@@ -964,7 +964,7 @@ void setup() {
  ************************************************************************/
 void loop(void) {
 
-#ifdef INFO
+#if defined(INFO)
     static uint8_t sLastPrintedMainState;
 
     if (WhistleSwitchControl.MainState != sLastPrintedMainState) {
@@ -1087,11 +1087,11 @@ void detectFrequency() {
      * readSignal() needs 26,6 ms for one loop at attiny85 1 MHz
      * Remaining of loop needs 260 cycles, but with debug output at 115200Baud it needs 7500 cycles.
      */
-#ifdef MEASURE_TIMING
+#if defined(MEASURE_TIMING)
     digitalWriteFast(TIMING_OUTPUT_PIN, HIGH);
 #endif
     uint16_t tFrequency = readSignal(); // needs 26.6 millis
-#ifdef MEASURE_TIMING
+#if defined(MEASURE_TIMING)
             digitalWriteFast(TIMING_OUTPUT_PIN, LOW);
 #endif
 
@@ -1133,7 +1133,7 @@ void detectFrequency() {
     }
 #endif
 
-#ifdef DEBUG
+#if defined(DEBUG)
     printInfos();
 #endif
 
@@ -1285,7 +1285,7 @@ void handleButtonPress(bool __attribute__((unused)) aButtonToggleState) {
 
     case PROGRAM_SIMPLE:
         WhistleSwitchControl.ButtonPressCounter++;
-#ifdef INFO
+#if defined(INFO)
         Serial.print("Count=");
         Serial.println(WhistleSwitchControl.ButtonPressCounter);
 #endif
