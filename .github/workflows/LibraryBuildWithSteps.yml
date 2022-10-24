@@ -2,7 +2,7 @@
 # Github workflow script for step by step testing of arduino-test-compile.sh script.
 # Should run the same commands as arduino-test-compile.sh
 #
-# Copyright (C) 2020  Armin Joachimsmeyer
+# Copyright (C) 2020-2022  Armin Joachimsmeyer
 # https://github.com/ArminJo/Github-Actions
 #
 # Before being able to push to my .github\workflows directories,
@@ -25,7 +25,7 @@ jobs:
   build:
     name: ${{ matrix.arduino-boards-fqbn }} - test compiling examples
 
-    runs-on: ubuntu-18.04 # I picked Ubuntu to use shell scripts.
+    runs-on: ubuntu-latest # I picked Ubuntu to use shell scripts.
 
     env:
       # Comma separated list without double quotes around the list.

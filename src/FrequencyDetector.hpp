@@ -1,5 +1,5 @@
 /**
- * FrequencyDetector.cpp
+ * FrequencyDetector.hpp
  *
  * Analyzes a microphone signal and outputs the detected frequency. It simply counts zero crossings and do not use FFT.
  * The ADC sample data is NOT stored in RAM, only the period lengths are stored in the PeriodLength[] array,
@@ -23,8 +23,8 @@
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *  See the GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program. If not, see <http://www.gnu.org/licenses/gpl.html>.
@@ -40,6 +40,9 @@
  *  and also low pass filters the result for smooth transitions between the 3 match states (lower, match, greater)
  *
  */
+
+#ifndef _FREQUENCY_DETECTOR_HPP
+#define _FREQUENCY_DETECTOR_HPP
 
 #include <Arduino.h>
 
@@ -627,3 +630,4 @@ void printDataForArduinoPlotter(Print *aSerial) {
     aSerial->println();
 }
 
+#endif // _FREQUENCY_DETECTOR_HPP

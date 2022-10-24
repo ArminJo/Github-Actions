@@ -15,8 +15,8 @@
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *  See the GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program. If not, see <http://www.gnu.org/licenses/gpl.html>.
@@ -35,10 +35,9 @@
 #include "ATtinySerialOut.h" // For redefining Print. Available as Arduino library
 #endif
 
-// If enabled, store first input samples for printing to Arduino Plotter
-//#define PRINT_INPUT_SIGNAL_TO_PLOTTER
-// Enable this to print generated output to Arduino Serial Plotter (Ctrl-Shift-L)
-//#define PRINT_RESULTS_TO_SERIAL_PLOTTER
+
+//#define PRINT_INPUT_SIGNAL_TO_PLOTTER     // If enabled, store first input samples for printing to Arduino Plotter
+//#define PRINT_RESULTS_TO_SERIAL_PLOTTER   // Enable this to print generated output to Arduino Serial Plotter (Ctrl-Shift-L)
 #if defined(PRINT_INPUT_SIGNAL_TO_PLOTTER) && defined(PRINT_RESULTS_TO_SERIAL_PLOTTER)
 #error Please define only one of PRINT_INPUT_SIGNAL_TO_PLOTTER and PRINT_RESULTS_TO_SERIAL_PLOTTER
 #endif
