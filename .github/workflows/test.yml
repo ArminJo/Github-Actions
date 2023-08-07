@@ -22,7 +22,7 @@ on:
 
 jobs:
   build:
-    name: ${{ matrix.arduino-boards-fqbn }} - test compiling examples
+    name: ${{ matrix.arduino-boards-fqbn }} - test of some steps
 
     runs-on: ubuntu-latest # I picked Ubuntu to use shell scripts.
 
@@ -70,7 +70,7 @@ jobs:
               SimpleFrequencyDetector:
                 -DINFO
 
-#          - arduino-boards-fqbn: arduino:avr:uno|trace # UNO board with different build properties
+#          - arduino-boards-fqbn: arduino:avr:uno|trace # Uno board with different build properties
 #            sketch-names: \*.ino # is default setting
 #            sketches-exclude: 50Hz # Comma separated list of example names to exclude in build
 #            build-properties:

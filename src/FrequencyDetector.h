@@ -35,12 +35,7 @@
 #include "ATtinySerialOut.h" // For redefining Print. Available as Arduino library
 #endif
 
-
-//#define PRINT_INPUT_SIGNAL_TO_PLOTTER     // If enabled, store first input samples for printing to Arduino Plotter
-//#define PRINT_RESULTS_TO_SERIAL_PLOTTER   // Enable this to print generated output to Arduino Serial Plotter (Ctrl-Shift-L)
-#if defined(PRINT_INPUT_SIGNAL_TO_PLOTTER) && defined(PRINT_RESULTS_TO_SERIAL_PLOTTER)
-#error Please define only one of PRINT_INPUT_SIGNAL_TO_PLOTTER and PRINT_RESULTS_TO_SERIAL_PLOTTER
-#endif
+//#define PRINT_INPUT_SIGNAL_TO_PLOTTER     // If enabled, store SIGNAL_PLOTTER_BUFFER_SIZE input samples for printing to Arduino Plotter
 
 #if (RAMEND < 1000)
 #define SIGNAL_PLOTTER_BUFFER_SIZE 100 // ATtiny85 -> Store only start of signal in plotter buffer
@@ -221,7 +216,7 @@ struct FrequencyDetectorControlStruct {
     /*
      * Value set by setFrequencyDetectorReadingValues()
      * Minimum signal strength value to produce valid output and do new trigger level computation. Otherwise return SIGNAL_STRENGTH_LOW
-     * Threshold for minimum SignalDelta of raw ADC value for valid signal strength. 0x40=312 mV at 5 millivolt and 68.75 mVolt at 1.1 volt, 0x20=156/34,37 millivolt
+     * Threshold for minimum SignalDelta of raw ADC value for valid signal strength. 0x40=312 mV at 5 V and 68.75 mV at 1.1 V, 0x20=156/34,37 mV
      */
     uint16_t RawVoltageMinDelta;
 
@@ -310,13 +305,21 @@ void computeDirectAndFilteredMatch(uint16_t aFrequency);
 
 void printTriggerValues(Print *aSerial);
 void printPeriodLengthArray(Print *aSerial);
-void printLegendForArduinoPlotter(Print *aSerial);
-void printDataForArduinoPlotter(Print *aSerial);
+void printLegendForArduinoPlotter(Print *aSerial) __attribute__ ((deprecated ("Renamed to printResultLegendForArduinoPlotter().")));
+void printDataForArduinoPlotter(Print *aSerial) __attribute__ ((deprecated ("Renamed to printResultDataForArduinoPlotter().")));
+void printResultLegendForArduinoPlotter(Print *aSerial);
+void printResultDataForArduinoPlotter(Print *aSerial);
 #if defined(PRINT_INPUT_SIGNAL_TO_PLOTTER)
+void printSignalValuesForArduinoPlotter(Print *aSerial) __attribute__ ((deprecated ("Renamed to printInputSignalValuesForArduinoPlotter().")));
 void printInputSignalValuesForArduinoPlotter(Print *aSerial);
 #endif
 
 /*
+ * Version 2.1.0 - 5/2023
+ * - Renamed printSignalValuesForArduinoPlotter() to  printInputSignalValuesForArduinoPlotter(),
+ *     printLegendForArduinoPlotter() to printResultLegendForArduinoPlotter()
+ *     and printDataForArduinoPlotter() to printResultDataForArduinoPlotter().
+ *
  * Version 2.0.0 - 9/2020
  * - Renamed `doPlausi()` to `doEqualDistributionPlausi()`.
  * - Changed error values and computation.
@@ -330,7 +333,7 @@ void printInputSignalValuesForArduinoPlotter(Print *aSerial);
  * - Corrected formula for compensating millis().
  * - New field PeriodOfOneReadingMillis.
  * - Now accept dropout values in milliseconds.
- * - New functions printLegendForArduinoPlotter() and printDataForArduinoPlotter().
+ * - New functions printResultLegendForArduinoPlotter() and printResultDataForArduinoPlotter().
  */
 
 #endif // _FREQUENCY_DETECTOR_H

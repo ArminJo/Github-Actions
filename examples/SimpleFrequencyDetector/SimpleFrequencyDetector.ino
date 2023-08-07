@@ -54,14 +54,27 @@
 
 //#define INFO
 #if ! defined(LED_BUILTIN) && defined(ARDUINO_AVR_DIGISPARK)
+#  if defined(DIGISTUMPCORE)
 #define LED_BUILTIN PB1
+#  else
+#define LED_BUILTIN PIN_PB1
+#  endif
 #endif
 
 #if defined(__AVR_ATtiny25__) || defined(__AVR_ATtiny45__) || defined(__AVR_ATtiny85__)
+#  if defined(DIGISTUMPCORE)
+#define TX_PIN PB2 // (package pin 7 on Tiny85) - can use one of PB0 to PB4 (+PB5) here
+#  endif
 #include "ATtinySerialOut.hpp" // Available as Arduino library "ATtinySerialOut"
 #endif
 
+//#define PRINT_INPUT_SIGNAL_TO_PLOTTER     // If enabled, store SIGNAL_PLOTTER_BUFFER_SIZE input samples for printing to Arduino Plotter
 #include "FrequencyDetector.hpp"
+
+//#define PRINT_RESULTS_TO_SERIAL_PLOTTER   // If enabled, this example program prints generated output values to Arduino Serial Plotter (Ctrl-Shift-L)
+#if defined(PRINT_INPUT_SIGNAL_TO_PLOTTER) && defined(PRINT_RESULTS_TO_SERIAL_PLOTTER)
+#error Please define only one of PRINT_INPUT_SIGNAL_TO_PLOTTER or PRINT_RESULTS_TO_SERIAL_PLOTTER
+#endif
 
 #if defined(INFO)
 #include "AVRUtils.h" // for getFreeRam()

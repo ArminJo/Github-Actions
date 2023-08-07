@@ -11,7 +11,7 @@
  *
  * By enabling PRINT_INPUT_SIGNAL_TO_PLOTTER it can be used as simple oscilloscope.
  *
- *  Copyright (C) 2014-2020  Armin Joachimsmeyer
+ *  Copyright (C) 2014-2023  Armin Joachimsmeyer
  *  Email: armin.joachimsmeyer@gmail.com
  *
  *  This file is part of Arduino-FrequencyDetector https://github.com/ArminJo/Arduino-FrequencyDetector.
@@ -67,6 +67,14 @@
 #  endif
 #endif
 
+// definitions from <wiring_private.h>
+#if !defined(cbi)
+#define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
+#endif
+#if !defined(sbi)
+#define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
+#endif
+
 #include "MillisUtils.h" // for timer0_millis
 
 //
@@ -74,7 +82,7 @@
 
 FrequencyDetectorControlStruct FrequencyDetectorControl;
 
-const char* ErrorStrings[] = { ErrorString_0, ErrorString_1, ErrorString_2, ErrorString_3, ErrorString_4 };
+const char *ErrorStrings[] = { ErrorString_0, ErrorString_1, ErrorString_2, ErrorString_3, ErrorString_4 };
 
 // Union to speed up the combination of low and high bytes to a word
 // it is not optimal since the compiler still generates 2 unnecessary moves
@@ -86,7 +94,7 @@ union Myword {
     } byte;
     uint16_t UWord;
     int16_t Word;
-    uint8_t * BytePointer;
+    uint8_t *BytePointer;
 };
 
 /****************************************************************
@@ -229,7 +237,11 @@ uint16_t readSignal() {
     /*
      * disable Timer0 (millis()) overflow interrupt
      */
-    disableMillisInterrupt();
+#if defined(TIMSK) && defined(TOIE)
+    cbi(TIMSK, TOIE);
+#else
+#error  Timer 0 overflow interrupt not disabled correctly
+#endif
 
 //  ADCSRB = 0; // free running mode  - is default
     ADCSRA = ((1 << ADEN) | (1 << ADSC) | (1 << ADATE) | (1 << ADIF) | FrequencyDetectorControl.ADCPrescalerValue);
@@ -244,7 +256,7 @@ uint16_t readSignal() {
     uint32_t tSumOfSampleValues = 0;
 
     uint8_t tPeriodCount = 0;
-    // requires 30 bytes more FLASH but speeds up loop by 9 cycles
+    // requires 30 bytes more program memory but speeds up loop by 9 cycles
     uint16_t tTriggerLevelLower = FrequencyDetectorControl.TriggerLevelLower;
     uint16_t tTriggerLevel = FrequencyDetectorControl.TriggerLevel;
 
@@ -333,7 +345,18 @@ uint16_t readSignal() {
      * Enable millis timer (0|1) overflow interrupt and compensate for disabled timer, if still disabled.
      * We need 625 microseconds for other computations @1MHz.
      */
-    enableMillisInterrupt(FrequencyDetectorControl.PeriodOfOneReadingMillis);
+    /*
+     * Enable timer 0 overflow interrupt and compensate for disabled timer, if still disabled.
+     */
+#if defined(TIMSK) && defined(TOIE)
+    if ((TIMSK & _BV(TOIE)) == 0) {
+        // still disabled -> compensate
+        timer0_millis += FrequencyDetectorControl.PeriodOfOneReadingMillis;
+    }
+    sbi(TIMSK, TOIE);
+#else
+#error  Timer 0 overflow interrupt not enabled correctly
+#endif
 
     /*
      * check for signal strength
@@ -527,7 +550,7 @@ void printPeriodLengthArray(Print *aSerial) {
         aSerial->print(F("Frequency="));
         aSerial->print(FrequencyDetectorControl.FrequencyRaw);
     } else {
-        aSerial->print(reinterpret_cast<const __FlashStringHelper *>(ErrorStrings[FrequencyDetectorControl.FrequencyRaw]));
+        aSerial->print(reinterpret_cast<const __FlashStringHelper*>(ErrorStrings[FrequencyDetectorControl.FrequencyRaw]));
     }
 
     /*
@@ -545,6 +568,14 @@ void printPeriodLengthArray(Print *aSerial) {
 }
 
 #if defined(PRINT_INPUT_SIGNAL_TO_PLOTTER)
+/*
+ * Prints input signal, upper and lower trigger levels and the value of FrequencyRaw (which also codes the errors)
+ * as well as caption (for 1.x IDE plotter)
+ * Requires sReadValueBuffer
+ */
+void printSignalValuesForArduinoPlotter(Print *aSerial) {
+     printInputSignalValuesForArduinoPlotter(aSerial);
+}
 void printInputSignalValuesForArduinoPlotter(Print *aSerial) {
     aSerial->print(F("InputValue TriggerLevel="));
     aSerial->print(FrequencyDetectorControl.TriggerLevel);
@@ -575,13 +606,19 @@ void printTriggerValues(Print *aSerial) {
     aSerial->println(FrequencyDetectorControl.TriggerLevel);
 }
 
-void printLegendForArduinoPlotter(Print *aSerial) {
+void printLegendForArduinoPlotter(Print *aSerial){
+    printResultLegendForArduinoPlotter(aSerial);
+}
+void printResultLegendForArduinoPlotter(Print *aSerial) {
     aSerial->println(
             F(
                     "FrequencyMatchDirect*95 MatchDropoutCount*13  MatchLowPassFiltered*2 FrequencyMatchFiltered*100 FrequencyRaw FrequencyFiltered"));
 }
 
 void printDataForArduinoPlotter(Print *aSerial) {
+    printResultDataForArduinoPlotter(aSerial);
+}
+void printResultDataForArduinoPlotter(Print *aSerial) {
     static uint8_t sConsecutiveErrorCount = 0; // Print only 10 errors, then stop
 
     if (sConsecutiveErrorCount >= 10) {
@@ -591,7 +628,7 @@ void printDataForArduinoPlotter(Print *aSerial) {
         } else {
             // no error any more, start again with print
             sConsecutiveErrorCount = 0;
-            printLegendForArduinoPlotter(aSerial);
+            printResultLegendForArduinoPlotter(aSerial);
         }
     }
     /*

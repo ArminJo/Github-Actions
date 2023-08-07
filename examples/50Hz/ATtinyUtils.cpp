@@ -1,7 +1,7 @@
 /*
  * ATtinyUtils.cpp
  *
- *  Copyright (C) 2016-2020  Armin Joachimsmeyer
+ *  Copyright (C) 2016-2023  Armin Joachimsmeyer
  *  Email: armin.joachimsmeyer@gmail.com
  *
  *  This file is part of Arduino-Utils https://github.com/ArminJo/Arduino-Utils.
@@ -65,13 +65,16 @@ inline void pinModeFastPortB(uint8_t aOutputPinNumber, uint8_t aMode) {
 #if defined(__AVR_ATtiny25__) || defined(__AVR_ATtiny45__) || defined(__AVR_ATtiny85__)
 
 /*
+ * Generates frequency signal and inverted signal to connect buzzer between 2 pins in order to increase volume.
+ * PWM mode is chosen, because the inverted outputs are only enabled in this mode.
+ * If you do not require both outputs, simply disable the "pinModeFast(PBX, OUTPUT);" statements for the unused outputs.
  * initialize outputs and use PWM Mode
- * if aUseOutputB == false output frequency at Pin6/5 - PB1/PB0 - OCR1A/!OCR1A
- * else at Pin3/2 - PB4/PB3 - OCR1B/!OCR1B
+ * @param aUseOutputB  - true:  output at Pin3/2 - PB4/PB3 - OCR1B/!OCR1B
+ *                     - false: output at Pin6/5 - PB1/PB0 - OCR1A/!OCR1A
  */
-void toneWithTimer1PWM(uint16_t aFrequency, bool aUseOutputB) {
+void toneWithTimer1PWM(uint16_t aFrequencyHerz, bool aUseOutputB) {
     uint8_t tPrescaler = 0x01;
-    uint16_t tOCR = F_CPU / aFrequency;
+    uint16_t tOCR = F_CPU / aFrequencyHerz;
     while (tOCR > 0x100 && tPrescaler < 0x0F) {
         tPrescaler++;
         tOCR >>= 1;
@@ -94,6 +97,10 @@ void toneWithTimer1PWM(uint16_t aFrequency, bool aUseOutputB) {
     }
 }
 
+
+void noToneWithTimer1PWM(){
+    TCCR1 = 0; // Disconnect pins and stop timer
+}
 void periodicInterruptWithTimer1(uint16_t aFrequency){
     uint8_t tPrescaler = 0x01;
     uint16_t tOCR = F_CPU / aFrequency;

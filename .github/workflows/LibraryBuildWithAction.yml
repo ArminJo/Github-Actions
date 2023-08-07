@@ -28,7 +28,7 @@ jobs:
 
     env:
       # Comma separated list without double quotes around the list.
-      REQUIRED_LIBRARIES: # ATtinySerialOut
+      REQUIRED_LIBRARIES: # ATtinySerialOut # is loaded as custom library below
 
     strategy:
       matrix:

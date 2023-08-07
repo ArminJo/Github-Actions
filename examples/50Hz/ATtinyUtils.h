@@ -110,6 +110,7 @@ inline void delay4CyclesInlineExact(uint16_t a4Microseconds) {
 }
 #if defined(__AVR_ATtiny25__) || defined(__AVR_ATtiny45__) || defined(__AVR_ATtiny85__)
 void toneWithTimer1PWM(uint16_t aFrequency, bool aUseOutputB = false);
+void noToneWithTimer1PWM();
 #endif
 
 uint8_t getBODLevelFuses();
