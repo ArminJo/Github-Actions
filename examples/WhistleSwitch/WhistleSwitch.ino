@@ -147,7 +147,7 @@ uint16_t predefinedRangesEnd[] = { 2050, 1680, 1480, 1280, 1130, 990, 1900, 1530
 #define PREDEFINED_RANGES_START_ARRAY_SIZE  (sizeof(predefinedRangesStart)/sizeof(predefinedRangesStart[0]))
 
 #if defined(INFO)
-#include "AVRUtils.h"   // for getFreeRam()
+#include "AVRUtils.h"   // for printRAMInfo()
 #include "ShowInfo.h"   // printBODLevel()
 #endif
 
@@ -958,8 +958,8 @@ void setup() {
     eepromReadParameter();
 
 #if defined(INFO)
-    Serial.print(F("Free Ram/Stack[bytes]="));
-    Serial.println(getFreeRam());
+    Serial.print(F("Current free Heap / Stack[bytes]="));
+    Serial.println(getCurrentFreeHeapOrStack());
 
     Serial.print(F("Tone detection no dropout before display=" STR(MIN_NO_DROPOUT_MILLIS_BEFORE_ANY_MATCH) "ms, before relay="));
     Serial.print(MATCH_MILLIS_NEEDED_DEFAULT + MIN_NO_DROPOUT_MILLIS_BEFORE_ANY_MATCH);

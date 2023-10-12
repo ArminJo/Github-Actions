@@ -288,6 +288,10 @@ struct FrequencyDetectorControlStruct {
 #define INTERNAL2V56_EXTCAP 13
 #endif
 
+#if defined(INTERNAL1V1) && !defined(INTERNAL)
+#define INTERNAL INTERNAL1V1 // for ATmega2560
+#endif
+
 extern FrequencyDetectorControlStruct FrequencyDetectorControl;
 
 void setFrequencyDetectorControlDefaults();

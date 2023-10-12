@@ -81,7 +81,7 @@ jobs:
         uses: ArminJo/arduino-test-compile@master
         with:
           arduino-board-fqbn: ${{ matrix.arduino-boards-fqbn }}
-          required-libraries: ${{ env.REQUIRED_LIBRARIES }}
+#          required-libraries: ${{ env.REQUIRED_LIBRARIES }}
           platform-url: ${{ matrix.platform-url }}
           sketches-exclude: ${{ matrix.sketches-exclude }}
 #          build-properties: '{ "WhistleSwitch": "-DINFO -DFREQUENCY_RANGE_LOW", "SimpleFrequencyDetector": "-DINFO" }'

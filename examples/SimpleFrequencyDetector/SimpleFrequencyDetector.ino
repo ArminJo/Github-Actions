@@ -77,7 +77,7 @@
 #endif
 
 #if defined(INFO)
-#include "AVRUtils.h" // for getFreeRam()
+#include "AVRUtils.h" // for printRAMInfo()
 #endif
 
 void setup() {
@@ -111,8 +111,8 @@ void setup() {
     // set my Frequency range
     setFrequencyDetectorMatchValues(1400, 1700);
 #if defined(INFO)
-    Serial.print(F("Free Ram/Stack[bytes]="));
-    Serial.println(getFreeRam());
+    Serial.print(F("Current free Heap / Stack[bytes]="));
+    Serial.println(getCurrentFreeHeapOrStack());
 #endif
 }
 

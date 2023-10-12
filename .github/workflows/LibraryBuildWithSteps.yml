@@ -90,6 +90,8 @@ jobs:
       # We use the `arduino/setup-arduino-cli` action to install and
       # configure the Arduino CLI on the system.
       - name: Donload arduino-cli
+        env:
+          CLI_VERSION: 0.33.0 # to avoid errors for ATTinyCore
         run: |
           if [[ -z $CLI_VERSION ]]; then echo "Set CLI_VERSION to default value: \"latest\""; CLI_VERSION='latest'; fi
 
