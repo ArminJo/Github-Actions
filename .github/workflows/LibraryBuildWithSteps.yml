@@ -1,8 +1,9 @@
 # LibraryBuildWithSteps.yml
 # Github workflow script for step by step testing of arduino-test-compile.sh script.
 # Should run the same commands as arduino-test-compile.sh
+# Has different echo newline handling.
 #
-# Copyright (C) 2020-2022  Armin Joachimsmeyer
+# Copyright (C) 2020-2024  Armin Joachimsmeyer
 # https://github.com/ArminJo/Github-Actions
 #
 # Before being able to push to my .github\workflows directories,
@@ -56,7 +57,7 @@ jobs:
         arduino-boards-fqbn:
 #          - arduino:avr:uno
           - arduino:avr:uno|All-DEBUG
-          - ATTinyCore:avr:attinyx5:chip=85,clock=1internal
+#          - ATTinyCore:avr:attinyx5:chip=85,clock=1internal
 
         # Specify parameters for each board.
         # With sketches-exclude you may exclude specific examples for a board. Use a comma separated list.
@@ -68,9 +69,9 @@ jobs:
               All: -DINFO -DDEBUG
               WhistleSwitch: -DINFO # -DDEBUG is 4 bytes too big :-(
 
-          - arduino-boards-fqbn: ATTinyCore:avr:attinyx5:chip=85,clock=1internal
-            platform-url: http://drazzy.com/package_drazzy.com_index.json
-            sketch-names: WhistleSwitch.ino,SimpleFrequencyDetector.ino,50Hz # Comma separated list of sketch names (no path required) or patterns to use in build
+#          - arduino-boards-fqbn: ATTinyCore:avr:attinyx5:chip=85,clock=1internal
+#            platform-url: http://drazzy.com/package_drazzy.com_index.json
+#            sketch-names: WhistleSwitch.ino,SimpleFrequencyDetector.ino,50Hz # Comma separated list of sketch names (no path required) or patterns to use in build
 #            sketch-names: Whistle.ino # Comma separated list of sketch names (no path required) or patterns to use in build
 
       # Do not cancel all jobs / architectures if one job fails
@@ -89,10 +90,11 @@ jobs:
 
       # We use the `arduino/setup-arduino-cli` action to install and
       # configure the Arduino CLI on the system.
-      - name: Donload arduino-cli
+      - name: Download arduino-cli
         env:
           CLI_VERSION: 0.33.0 # to avoid errors for ATTinyCore
         run: |
+          # Download arduino-cli
           if [[ -z $CLI_VERSION ]]; then echo "Set CLI_VERSION to default value: \"latest\""; CLI_VERSION='latest'; fi
 
           # Download and install arduino IDE, if not already cached
@@ -135,7 +137,7 @@ jobs:
           # which arduino-cli # /opt/hostedtoolcache/arduino-cli/0.9.0/x64/arduino-cli
         shell: bash {0} # Required to avoid an exit at first error
 
-      - name: Donload teensyduino
+      - name: Download and install teensy core
         run: |
           # Download and install teensy core
           echo -n -e "\n\n${YELLOW}Teensy core "
@@ -173,6 +175,7 @@ jobs:
 
       - name: Print environment
         run: |
+          # Print environment
           if [[ $DEBUG_INSTALL == true ]]; then
             echo HOME=$HOME # /home/runner if script, /github/home if action
             echo PWD=$PWD # /home/runner/work/Github-Actions-Test/Github-Actions-Test if script, /github/workspace if action
@@ -183,6 +186,7 @@ jobs:
 
       - name: Add *Custom* directories to Arduino library directory
         run: |
+          # Add *Custom* directories to Arduino library directory
           if ls $GITHUB_WORKSPACE/*Custom* >/dev/null 2>&1; then
             echo -e "\n\n${YELLOW}Add *Custom* as Arduino library"
             mkdir --parents $HOME/Arduino/libraries
@@ -199,6 +203,7 @@ jobs:
 
       - name: Link this repository as Arduino library
         run: |
+          # Link this repository as Arduino library
           # Check if repo is an Arduino library
           if [[ -f $GITHUB_WORKSPACE/library.properties ]]; then
             echo -e "\n\n${YELLOW}Link this repository as Arduino library"
@@ -217,9 +222,10 @@ jobs:
           PLATFORM_URL: ${{ matrix.platform-url}}
           ARDUINO_BOARD_FQBN: ${{ matrix.arduino-boards-fqbn }}
         run: |
+          # Update index and install the required board platform
           echo -e "\n\n${YELLOW}Update index and install the required board platform"
           if [[ -z $ARDUINO_PLATFORM ]]; then
-          # ARDUINO_PLATFORM is empty -> derive platform from the 2 first elements of the arduino-board-fqbn
+          # DownloadPLATFORM is empty -> derive platform from the 2 first elements of the arduino-board-fqbn
             remainder=${ARDUINO_BOARD_FQBN#*:}
             PLATFORM=${ARDUINO_BOARD_FQBN%%:*}:${remainder%%:*}
           else
@@ -256,11 +262,15 @@ jobs:
           done
 
           # Export PLATFORM for the next step
-          echo ::set-output name=PLATFORM::$PLATFORM
+          #echo ::set-output name=PLATFORM::$PLATFORM
+          echo "EXPORTED_PLATFORM=$PLATFORM" >> $GITHUB_ENV
         shell: bash {0} # Required to avoid an exit at first error
 
       - name: Special esp8266 and esp32 platform handling
         run: |
+          # Special esp8266 and esp32 platform handling
+          PLATFORM=$EXPORTED_PLATFORM
+          echo PLATFORM=$PLATFORM
           echo -e "\n\n${YELLOW}Special esp8266 and esp32 platform handling"
           if [[ ${PLATFORM} == esp8266:esp8266 && ! -f /usr/bin/python3 ]]; then
             # python3 is a link in the esp8266 package: /github/home/.arduino15/packages/esp8266/tools/python3/3.7.2-post1/python3 -> /usr/bin/python3
@@ -282,6 +292,7 @@ jobs:
       - name: List installed boards with their FQBN
         # ls -l $HOME/.arduino15/packages/ # I see only arduino and one of the Attiny cores but not all 3 together
         run: |
+          # List installed boards with their FQBN
           echo -e "\n\n${YELLOW}List installed boards with their FQBN"
           if [[ $DEBUG_INSTALL == true ]]; then
             echo arduino-cli board listall --verbose
@@ -293,6 +304,7 @@ jobs:
 
       - name: Install required libraries
         run: |
+          # Install required libraries
           echo -e "\n${YELLOW}Install required libraries"
           if [[ -z $REQUIRED_LIBRARIES ]]; then
             echo No additional libraries to install
@@ -322,6 +334,10 @@ jobs:
           SKETCH_NAMES: ${{ matrix.sketch-names }}
           SKETCHES_EXCLUDE: ${{ matrix.sketches-exclude }}
         run: |
+          # Compile all examples
+          # Save generated files to the build subfolder of the sketch
+          export ARDUINO_SKETCH_ALWAYS_EXPORT_BINARIES=true
+
           if [[ -z $SKETCH_NAMES ]]; then echo -e "Set SKETCH_NAMES to default value: \"*.ino\""; SKETCH_NAMES='*.ino'; fi
           echo SKETCH_NAMES="$SKETCH_NAMES"
 
@@ -376,7 +392,7 @@ jobs:
               GLOBIGNORE=
               # No files found -> list start directory and execute find command to see what we did
               echo -e "find command is: find ${PWD}/${SKETCH_NAMES_FIND_START} -type f -name \"$sketch_name\""
-              echo "\"sketch-names-find-start\" directory content listing with: ls -l ${PWD}/${SKETCH_NAMES_FIND_START}"
+              echo -e "\"sketch-names-find-start\" directory content listing with: ls -l ${PWD}/${SKETCH_NAMES_FIND_START}"
               ls -l ${PWD}/${SKETCH_NAMES_FIND_START}
               echo
             fi
@@ -387,6 +403,10 @@ jobs:
               SKETCH_FILENAME=$(basename $sketch) # complete name of sketch
               SKETCH_EXTENSION=${SKETCH_FILENAME##*.} # extension of sketch
               SKETCH_BASENAME=${SKETCH_FILENAME%%.*} # name wihout extension / basename of sketch, must match directory name
+              if [[ $DEBUG_COMPILE == true ]]; then
+                echo -e "\n${YELLOW}Process $sketch with filename $SKETCH_FILENAME and extension $SKETCH_EXTENSION"
+              fi
+              echo ""
               if [[ $SKETCHES_EXCLUDE == *"$SKETCH_BASENAME"* ]]; then
                 echo -e "Skipping $SKETCH_BASENAME \xe2\x9e\x9e" # Right arrow
               else
@@ -397,8 +417,8 @@ jobs:
                 fi
                 # If directory name does not match sketch name, create an appropriate directory, copy the files recursively and compile
                 if [[ $SKETCH_DIR != $SKETCH_BASENAME ]]; then
-                  mkdir $HOME/$SKETCH_BASENAME
                   echo "Creating directory $HOME/$SKETCH_BASENAME and copy ${SKETCH_PATH}/* to it"
+                  mkdir $HOME/$SKETCH_BASENAME
                   cp --recursive ${SKETCH_PATH}/* $HOME/$SKETCH_BASENAME
                   SKETCH_PATH=$HOME/$SKETCH_BASENAME
                 fi
@@ -407,45 +427,47 @@ jobs:
                 fi
                 # Check if there is an entry in the associative array and create compile parameter to put in compiler.*.extra_flags
                 # This flags are also defined in platform.txt as empty, to be overwritten by a platform.local.txt definition.
-                # But I never saw a distribution using this fature, so we can go on here :-)
+                # But I never saw a distribution using this feature, so we can go on here :-)
                 echo -n "Compiling $SKETCH_BASENAME "
                 if [[ -n ${PROP_MAP[$SKETCH_BASENAME]} ]]; then
                   GCC_EXTRA_FLAGS=${PROP_MAP[$SKETCH_BASENAME]}
-                  echo -n "with $GCC_EXTRA_FLAGS "
+                  echo "with $GCC_EXTRA_FLAGS"
                 elif [[ -n ${PROP_MAP[All]} ]]; then
                   GCC_EXTRA_FLAGS=${PROP_MAP[All]}
-                  echo -n "with $GCC_EXTRA_FLAGS "
+                  echo "with $GCC_EXTRA_FLAGS "
                 else
                   GCC_EXTRA_FLAGS=
                 fi
                 if [[ -z $GCC_EXTRA_FLAGS ]]; then
-                  build_stdout=$(arduino-cli compile --verbose --warnings all --fqbn ${ARDUINO_BOARD_FQBN%|*} $BUILD_PATH_PARAMETER $SKETCH_PATH 2>&1)
+                  build_stdout=$(arduino-cli compile --verbose --warnings all --fqbn ${ARDUINO_BOARD_FQBN%|*} $BUILD_PATH_PARAMETER $EXTRA_ARDUINO_CLI_ARGS $SKETCH_PATH 2>&1)
                 else
-                  build_stdout=$(arduino-cli compile --verbose --warnings all --fqbn ${ARDUINO_BOARD_FQBN%|*} $BUILD_PATH_PARAMETER --build-properties compiler.cpp.extra_flags="${GCC_EXTRA_FLAGS}" --build-properties compiler.c.extra_flags="${GCC_EXTRA_FLAGS}" --build-properties compiler.S.extra_flags="${GCC_EXTRA_FLAGS}" $SKETCH_PATH 2>&1)
+                  build_stdout=$(arduino-cli compile --verbose --warnings all --fqbn ${ARDUINO_BOARD_FQBN%|*} $BUILD_PATH_PARAMETER --build-property compiler.cpp.extra_flags="${GCC_EXTRA_FLAGS}" --build-property compiler.c.extra_flags="${GCC_EXTRA_FLAGS}" --build-property compiler.S.extra_flags="${GCC_EXTRA_FLAGS}" $EXTRA_ARDUINO_CLI_ARGS $SKETCH_PATH 2>&1)
                 fi
                 if [[ $? -ne 0 ]]; then
                   echo -e "${RED}\xe2\x9c\x96" # If ok output a green checkmark else a red X and the command output.
                   if [[ -z $GCC_EXTRA_FLAGS ]]; then
-                    echo "arduino-cli compile --verbose --warnings all --fqbn ${ARDUINO_BOARD_FQBN%|*} $BUILD_PATH_PARAMETER $SKETCH_PATH"
+                    echo "arduino-cli compile --verbose --warnings all --fqbn ${ARDUINO_BOARD_FQBN%|*} $BUILD_PATH_PARAMETER $EXTRA_ARDUINO_CLI_ARGS $SKETCH_PATH"
                   else
-                    echo "arduino-cli compile --verbose --warnings all --fqbn ${ARDUINO_BOARD_FQBN%|*} $BUILD_PATH_PARAMETER --build-properties compiler.cpp.extra_flags=\"${GCC_EXTRA_FLAGS}\" --build-properties compiler.c.extra_flags=\"${GCC_EXTRA_FLAGS}\" --build-properties compiler.S.extra_flags=\"${GCC_EXTRA_FLAGS}\" $SKETCH_PATH"
+                    echo "arduino-cli compile --verbose --warnings all --fqbn ${ARDUINO_BOARD_FQBN%|*} $BUILD_PATH_PARAMETER --build-property compiler.cpp.extra_flags=\"${GCC_EXTRA_FLAGS}\" --build-property compiler.c.extra_flags=\"${GCC_EXTRA_FLAGS}\" --build-property compiler.S.extra_flags=\"${GCC_EXTRA_FLAGS}\" $EXTRA_ARDUINO_CLI_ARGS $SKETCH_PATH"
                   fi
                   echo "::error::Compile of  $SKETCH_BASENAME ${GCC_EXTRA_FLAGS} failed"
-                  echo -e "$build_stdout \n"
+                  echo "$build_stdout"
                   exit_code=1
                 else
                   echo -e "${GREEN}\xe2\x9c\x93"
                   if [[ -z $GCC_EXTRA_FLAGS ]]; then
-                    echo "arduino-cli compile --verbose --warnings all --fqbn ${ARDUINO_BOARD_FQBN%|*} $BUILD_PATH_PARAMETER $SKETCH_PATH"
+                    echo "arduino-cli compile --verbose --warnings all --fqbn ${ARDUINO_BOARD_FQBN%|*} $BUILD_PATH_PARAMETER $EXTRA_ARDUINO_CLI_ARGS $SKETCH_PATH"
                   else
-                    echo "arduino-cli compile --verbose --warnings all --fqbn ${ARDUINO_BOARD_FQBN%|*} $BUILD_PATH_PARAMETER --build-properties compiler.cpp.extra_flags=\"${GCC_EXTRA_FLAGS}\" --build-properties compiler.c.extra_flags=\"${GCC_EXTRA_FLAGS}\" --build-properties compiler.S.extra_flags=\"${GCC_EXTRA_FLAGS}\" $SKETCH_PATH"
+                    echo "arduino-cli compile --verbose --warnings all --fqbn ${ARDUINO_BOARD_FQBN%|*} $BUILD_PATH_PARAMETER --build-property compiler.cpp.extra_flags=\"${GCC_EXTRA_FLAGS}\" --build-property compiler.c.extra_flags=\"${GCC_EXTRA_FLAGS}\" --build-property compiler.S.extra_flags=\"${GCC_EXTRA_FLAGS}\" $EXTRA_ARDUINO_CLI_ARGS $SKETCH_PATH"
                   fi
                   if [[ $DEBUG_COMPILE == true || $SET_BUILD_PATH == true ]]; then
                     echo "Debug mode enabled => compile output will be printed also for successful compilation and sketch directory is listed after compilation"
-                    echo -e "$build_stdout \n"
-                    echo -e "\nls -l --recursive $SKETCH_PATH/build/"
-                    ls -l --recursive $SKETCH_PATH/build/
-                    echo -e "\n\n"
+                    echo "$build_stdout"
+                    echo ""
+                    echo "ls -l --recursive $SKETCH_PATH/build/"
+                    ls -l --recursive $SKETCH_PATH/build/ # This works because of exporting ARDUINO_SKETCH_ALWAYS_EXPORT_BINARIES=true above
+                    echo ""
+                    echo ""
                   fi
                 fi
                 COMPILED_SKETCHES="$COMPILED_SKETCHES $SKETCH_NAME"

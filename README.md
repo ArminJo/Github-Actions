@@ -2,7 +2,7 @@
 
 # Github workflow test script for development and testing the [arduino-test-compile action](https://github.com/ArminJo/arduino-test-compile) and [bash script](https://github.com/ArminJo/arduino-test-compile/arduino-test-compile.sh).
 
-## The arduino-test-compile action is also available as an [action in the GitHub Marketplace](https://github.com/marketplace/actions/test-compile-for-arduino).
+## The arduino-test-compile action is available as an [action in the GitHub Marketplace](https://github.com/marketplace/actions/test-compile-for-arduino).
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://spdx.org/licenses/MIT.html)
 [![LibraryBuildWithAction Build Status](https://github.com/ArminJo/Github-Actions/workflows/LibraryBuildWithAction/badge.svg)](https://github.com/ArminJo/Github-Actions/actions)

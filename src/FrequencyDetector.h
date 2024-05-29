@@ -26,9 +26,9 @@
 #ifndef _FREQUENCY_DETECTOR_H
 #define _FREQUENCY_DETECTOR_H
 
-#define VERSION_FREQUENCY_DETECTOR "2.0.0"
+#define VERSION_FREQUENCY_DETECTOR "2.0.1"
 #define VERSION_FREQUENCY_DETECTOR_MAJOR 2
-#define VERSION_FREQUENCY_DETECTOR_MINOR 0
+#define VERSION_FREQUENCY_DETECTOR_MINOR 1
 // The change log is at the bottom of the file
 
 #if defined(__AVR_ATtiny25__) || defined(__AVR_ATtiny45__) || defined(__AVR_ATtiny85__)
