@@ -83,7 +83,8 @@
 void setup() {
     pinMode(LED_BUILTIN, OUTPUT);
     Serial.begin(115200);
-#if defined(__AVR_ATmega32U4__) || defined(SERIAL_PORT_USBVIRTUAL) || defined(SERIAL_USB) /*stm32duino*/|| defined(USBCON) /*STM32_stm32*/|| defined(SERIALUSB_PID) || defined(ARDUINO_attiny3217)
+#if defined(__AVR_ATmega32U4__) || defined(SERIAL_PORT_USBVIRTUAL) || defined(SERIAL_USB) /*stm32duino*/|| defined(USBCON) /*STM32_stm32*/ \
+    || defined(SERIALUSB_PID)  || defined(ARDUINO_ARCH_RP2040) || defined(ARDUINO_attiny3217)
     delay(4000); // To be able to connect Serial monitor after reset or power up and before first print out. Do not wait for an attached Serial Monitor!
 #endif
     // Just to know which program is running on my Arduino
@@ -111,8 +112,9 @@ void setup() {
     // set my Frequency range
     setFrequencyDetectorMatchValues(1400, 1700);
 #if defined(INFO)
-    Serial.print(F("Current free Heap / Stack[bytes]="));
-    Serial.println(getCurrentFreeHeapOrStack());
+    // do not use printCurrentAvailableStackSize(&Serial) because we may use the ATtinySerialOut as Serial
+    Serial.print(F("Currently available Stack[bytes]="));
+    Serial.println(getCurrentAvailableStackSize());
 #endif
 }
 

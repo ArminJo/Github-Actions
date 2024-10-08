@@ -431,10 +431,10 @@ jobs:
                 echo -n "Compiling $SKETCH_BASENAME "
                 if [[ -n ${PROP_MAP[$SKETCH_BASENAME]} ]]; then
                   GCC_EXTRA_FLAGS=${PROP_MAP[$SKETCH_BASENAME]}
-                  echo "with $GCC_EXTRA_FLAGS"
+                  echo -n "with $GCC_EXTRA_FLAGS " # -n for the green check after the text
                 elif [[ -n ${PROP_MAP[All]} ]]; then
                   GCC_EXTRA_FLAGS=${PROP_MAP[All]}
-                  echo "with $GCC_EXTRA_FLAGS "
+                  echo -n "with $GCC_EXTRA_FLAGS "
                 else
                   GCC_EXTRA_FLAGS=
                 fi
