@@ -57,7 +57,7 @@ jobs:
         arduino-boards-fqbn:
 #          - arduino:avr:uno
           - arduino:avr:uno|All-DEBUG
-#          - ATTinyCore:avr:attinyx5:chip=85,clock=1internal
+          - ATTinyCore:avr:attinyx5:chip=85,clock=1internal
 
         # Specify parameters for each board.
         # With sketches-exclude you may exclude specific examples for a board. Use a comma separated list.
@@ -69,10 +69,10 @@ jobs:
               All: -DINFO -DDEBUG
               WhistleSwitch: -DINFO # -DDEBUG is 4 bytes too big :-(
 
-#          - arduino-boards-fqbn: ATTinyCore:avr:attinyx5:chip=85,clock=1internal
-#            platform-url: http://drazzy.com/package_drazzy.com_index.json
-#            sketch-names: WhistleSwitch.ino,SimpleFrequencyDetector.ino,50Hz # Comma separated list of sketch names (no path required) or patterns to use in build
-#            sketch-names: Whistle.ino # Comma separated list of sketch names (no path required) or patterns to use in build
+          - arduino-boards-fqbn: ATTinyCore:avr:attinyx5:chip=85,clock=1internal
+            platform-url: http://drazzy.com/package_drazzy.com_index.json
+            sketch-names: WhistleSwitch.ino,SimpleFrequencyDetector.ino,50Hz # Comma separated list of sketch names (no path required) or patterns to use in build
+            sketch-names: Whistle.ino # Comma separated list of sketch names (no path required) or patterns to use in build
 
       # Do not cancel all jobs / architectures if one job fails
       fail-fast: false
@@ -91,8 +91,8 @@ jobs:
       # We use the `arduino/setup-arduino-cli` action to install and
       # configure the Arduino CLI on the system.
       - name: Download arduino-cli
-        env:
-          CLI_VERSION: 0.33.0 # to avoid errors for ATTinyCore
+#        env:
+#          CLI_VERSION: 0.33.0 # to avoid errors for ATTinyCore
         run: |
           # Download arduino-cli
           if [[ -z $CLI_VERSION ]]; then echo "Set CLI_VERSION to default value: \"latest\""; CLI_VERSION='latest'; fi
@@ -431,10 +431,10 @@ jobs:
                 echo -n "Compiling $SKETCH_BASENAME "
                 if [[ -n ${PROP_MAP[$SKETCH_BASENAME]} ]]; then
                   GCC_EXTRA_FLAGS=${PROP_MAP[$SKETCH_BASENAME]}
-                  echo "with $GCC_EXTRA_FLAGS"
+                  echo -n "with $GCC_EXTRA_FLAGS " # -n for the green check after the text
                 elif [[ -n ${PROP_MAP[All]} ]]; then
                   GCC_EXTRA_FLAGS=${PROP_MAP[All]}
-                  echo "with $GCC_EXTRA_FLAGS "
+                  echo -n "with $GCC_EXTRA_FLAGS "
                 else
                   GCC_EXTRA_FLAGS=
                 fi

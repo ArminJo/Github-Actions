@@ -84,9 +84,10 @@ jobs:
 #          required-libraries: ${{ env.REQUIRED_LIBRARIES }}
           platform-url: ${{ matrix.platform-url }}
           sketches-exclude: ${{ matrix.sketches-exclude }}
-#          build-properties: '{ "WhistleSwitch": "-DINFO -DFREQUENCY_RANGE_LOW", "SimpleFrequencyDetector": "-DINFO" }'
-#results in: BUILD_PROPERTIES={ "WhistleSwitch": "-DINFO -DFREQUENCY_RANGE_LOW", "SimpleFrequencyDetector": "-DINFO" }
-          build-properties: '{ "All": "${{ matrix.log-options }} ${{ matrix.other-options }}" }'
+#          build-properties: '{ "WhistleSwitch": "-DINFO -DFREQUENCY_RANGE_LOW", "SimpleFrequencyDetector": "-DINFO -DTEST" }'
+#results in: BUILD_PROPERTIES={ "WhistleSwitch": "-DINFO -DFREQUENCY_RANGE_LOW", "SimpleFrequencyDetector": "-DINFO -DTEST" }
+          build-properties: '{ "All": "-DOPTION_FOR_ALL ${{ matrix.log-options }} ${{ matrix.other-options }}" }'
+          #results in: BUILD_PROPERTIES={ "WhistleSwitch": "-DINFO -DFREQUENCY_RANGE_LOW", "SimpleFrequencyDetector": "-DINFO -DTEST" }
           sketch-names:
             WhistleSwitch.ino,
             50Hz.ino,

@@ -37,7 +37,7 @@
 
 //#define PRINT_INPUT_SIGNAL_TO_PLOTTER     // If enabled, store SIGNAL_PLOTTER_BUFFER_SIZE input samples for printing to Arduino Plotter
 
-#if (RAMEND < 1000)
+#if ((RAMEND - RAMSTART) < 1023)
 #define SIGNAL_PLOTTER_BUFFER_SIZE 100 // ATtiny85 -> Store only start of signal in plotter buffer
 #elif (NUMBER_OF_SAMPLES < 1024)
 #define SIGNAL_PLOTTER_BUFFER_SIZE NUMBER_OF_2_COMPRESSED_SAMPLES // ATmega328 -> Can store complete signal in plotter buffer
