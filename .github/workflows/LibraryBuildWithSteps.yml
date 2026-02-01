@@ -57,7 +57,7 @@ jobs:
         arduino-boards-fqbn:
 #          - arduino:avr:uno
           - arduino:avr:uno|All-DEBUG
-#          - ATTinyCore:avr:attinyx5:chip=85,clock=1internal
+          - ATTinyCore:avr:attinyx5:chip=85,clock=1internal
 
         # Specify parameters for each board.
         # With sketches-exclude you may exclude specific examples for a board. Use a comma separated list.
@@ -69,10 +69,9 @@ jobs:
               All: -DINFO -DDEBUG
               WhistleSwitch: -DINFO # -DDEBUG is 4 bytes too big :-(
 
-#          - arduino-boards-fqbn: ATTinyCore:avr:attinyx5:chip=85,clock=1internal
-#            platform-url: http://drazzy.com/package_drazzy.com_index.json
-#            sketch-names: WhistleSwitch.ino,SimpleFrequencyDetector.ino,50Hz # Comma separated list of sketch names (no path required) or patterns to use in build
-#            sketch-names: Whistle.ino # Comma separated list of sketch names (no path required) or patterns to use in build
+          - arduino-boards-fqbn: ATTinyCore:avr:attinyx5:chip=85,clock=1internal
+            platform-url: https://felias-fogg.github.io/downloads/package_debug_enabled_index.json
+            sketch-names: WhistleSwitch.ino,SimpleFrequencyDetector.ino,50Hz # Comma separated list of sketch names (no path required) or patterns to use in build
 
       # Do not cancel all jobs / architectures if one job fails
       fail-fast: false
