@@ -147,7 +147,7 @@ uint16_t predefinedRangesEnd[] = { 2050, 1680, 1480, 1280, 1130, 990, 1900, 1530
 #define PREDEFINED_RANGES_START_ARRAY_SIZE  (sizeof(predefinedRangesStart)/sizeof(predefinedRangesStart[0]))
 
 #if defined(INFO)
-#include "AVRUtils.h"   // for printRAMInfo()
+#include "AVRUtils.h"   // for getCurrentAvailableStackSize()
 #include "ShowInfo.h"   // printBODLevel()
 #endif
 
